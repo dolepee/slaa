@@ -1,0 +1,14 @@
+node_modules/
+.env
+.env.local
+.env.*.local
+artifacts/
+cache/
+typechain-types/
+deployments/
+merchant_private_key.pem
+merchant_public_key.pem
+*.log
+.DS_Store
+frontend/.next/
+frontend/node_modules/
