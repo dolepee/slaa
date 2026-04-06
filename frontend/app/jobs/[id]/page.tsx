@@ -178,6 +178,53 @@ export default function JobDetail({ params }: { params: { id: string } }) {
             </div>
           </div>
 
+          {status === 1 && (
+            <div className="mt-6 p-4 bg-yellow-50 rounded-lg">
+              <h3 className="font-medium text-yellow-900 mb-2">Accept This Job</h3>
+              <p className="text-sm text-yellow-800 mb-3">This job is funded and waiting for an agent. Enter your Agent Token ID to accept.</p>
+              <div className="flex gap-3 mb-3">
+                <input
+                  type="number"
+                  id="agentTokenId"
+                  placeholder="Agent Token ID"
+                  min="1"
+                  className="w-40 px-4 py-2 border border-yellow-300 rounded-lg"
+                />
+                <button
+                  onClick={async () => {
+                    if (!window.ethereum) return
+                    setIsSubmitting(true)
+                    try {
+                      const [address] = await window.ethereum.request({ method: 'eth_requestAccounts' })
+                      const walletClient = createWalletClient({
+                        account: address as `0x${string}`,
+                        chain: hashkeyTestnet,
+                        transport: custom(window.ethereum)
+                      })
+                      const tokenIdInput = (document.getElementById('agentTokenId') as HTMLInputElement).value
+                      const hash = await walletClient.writeContract({
+                        account: address as `0x${string}`,
+                        address: CONTRACTS.jobEscrow as `0x${string}`,
+                        abi: JOB_ESCROW_ABI,
+                        functionName: 'acceptJob',
+                        args: [BigInt(jobId), BigInt(tokenIdInput)],
+                      })
+                      console.log('Job accepted:', hash)
+                      await loadJob()
+                    } catch (err) {
+                      console.error('Failed to accept job:', err)
+                    }
+                    setIsSubmitting(false)
+                  }}
+                  disabled={isSubmitting}
+                  className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 disabled:bg-gray-400"
+                >
+                  {isSubmitting ? 'Accepting...' : 'Accept Job'}
+                </button>
+              </div>
+            </div>
+          )}
+
           {status === 2 && (
             <div className="mt-6 p-4 bg-green-50 rounded-lg">
               <h3 className="font-medium text-green-900 mb-2">Submit Work</h3>

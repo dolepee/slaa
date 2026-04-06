@@ -38,20 +38,21 @@ contract ReputationRegistry {
 
     function postReputation(
         address agent,
+        address employer,
         uint256 score,
         uint256 jobId
     ) external onlyJobEscrow {
         require(score <= 100, "Score must be 0 to 100");
 
         reputationHistory[agent].push(ReputationSignal({
-            employer: tx.origin,
+            employer: employer,
             score: score,
             jobId: jobId,
             timestamp: block.timestamp
         }));
 
         _updateAverage(agent);
-        emit ReputationPosted(agent, tx.origin, score, jobId);
+        emit ReputationPosted(agent, employer, score, jobId);
     }
 
     function _updateAverage(address agent) internal {

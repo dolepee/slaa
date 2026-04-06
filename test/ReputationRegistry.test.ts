@@ -20,6 +20,7 @@ describe("ReputationRegistry", function () {
   it("Should post reputation from JobEscrow", async function () {
     await reputationRegistry.connect(escrow).postReputation(
       agent.address,
+      employer.address,
       85,
       1
     );
@@ -30,9 +31,9 @@ describe("ReputationRegistry", function () {
   });
 
   it("Should calculate average correctly with multiple reviews", async function () {
-    await reputationRegistry.connect(escrow).postReputation(agent.address, 80, 1);
-    await reputationRegistry.connect(escrow).postReputation(agent.address, 90, 2);
-    await reputationRegistry.connect(escrow).postReputation(agent.address, 70, 3);
+    await reputationRegistry.connect(escrow).postReputation(agent.address, employer.address, 80, 1);
+    await reputationRegistry.connect(escrow).postReputation(agent.address, employer.address, 90, 2);
+    await reputationRegistry.connect(escrow).postReputation(agent.address, employer.address, 70, 3);
 
     const [average, reviews] = await reputationRegistry.getReputation(agent.address);
     expect(average).to.equal(80); // (80+90+70)/3 = 80
@@ -40,23 +41,24 @@ describe("ReputationRegistry", function () {
   });
 
   it("Should store reputation history", async function () {
-    await reputationRegistry.connect(escrow).postReputation(agent.address, 95, 1);
-    
+    await reputationRegistry.connect(escrow).postReputation(agent.address, employer.address, 95, 1);
+
     const history = await reputationRegistry.getReputationHistory(agent.address);
     expect(history.length).to.equal(1);
     expect(history[0].score).to.equal(95);
     expect(history[0].jobId).to.equal(1);
+    expect(history[0].employer).to.equal(employer.address);
   });
 
   it("Should reject score above 100", async function () {
     await expect(
-      reputationRegistry.connect(escrow).postReputation(agent.address, 101, 1)
+      reputationRegistry.connect(escrow).postReputation(agent.address, employer.address, 101, 1)
     ).to.be.revertedWith("Score must be 0 to 100");
   });
 
   it("Should only allow JobEscrow to post reputation", async function () {
     await expect(
-      reputationRegistry.connect(employer).postReputation(agent.address, 85, 1)
+      reputationRegistry.connect(employer).postReputation(agent.address, employer.address, 85, 1)
     ).to.be.revertedWith("Only JobEscrow");
   });
 });

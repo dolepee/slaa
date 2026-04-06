@@ -23,11 +23,11 @@ export const hashkeyTestnet = defineChain({
 export const USDC_ADDRESS = '0x79AEc4EeA31D50792F61D1Ca0733C18c89524C9e' as const
 
 export const CONTRACTS = {
-  agentRegistry: '0x387cEc19C7A14272805506Ad7F709C7D99a0C9A4',
-  reputationRegistry: '0x0aD450884C781C4d6FfB9f19be00B2c60D15b444',
-  jobEscrow: '0xc7D5eA4038BF7C874b8314405fA74A131e9bC49f',
+  agentRegistry: '0x03F4b924f9993A20bC9F4C5b20c5b5344E79d9b7',
+  reputationRegistry: '0x632F230f0548e9c1438A4A78A720e7e7Ef10e83D',
+  jobEscrow: '0x0c06d128614B9AeD57Ed56Ed016aa9c71c5FBA30',
   usdc: USDC_ADDRESS,
-  mockHSP: '0xF8991ECbf5aC0b0d207c1aC67d61Db888fb8627b',
+  mockHSP: '0xDFfB5F5602Ae10C53B4568793C795FBd86c9A07F',
 } as const
 
 export const EXPLORER_URL = 'https://testnet-explorer.hsk.xyz'

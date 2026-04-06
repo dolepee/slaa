@@ -131,11 +131,11 @@ contract JobEscrow {
 
         address agentWallet = agentRegistry.ownerOf(job.agentTokenId);
 
-        if (!job.fundedViaHSP) {
-            usdc.safeTransfer(agentWallet, job.reward);
-        }
+        // Transfer USDC to agent regardless of funding method.
+        // Both direct funding and HSP funding deposit USDC into this contract.
+        usdc.safeTransfer(agentWallet, job.reward);
 
-        reputationRegistry.postReputation(agentWallet, reputationScore, jobId);
+        reputationRegistry.postReputation(agentWallet, msg.sender, reputationScore, jobId);
         agentRegistry.incrementCompletedCount(job.agentTokenId);
 
         job.status = JobStatus.Released;

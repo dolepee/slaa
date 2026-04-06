@@ -50,7 +50,31 @@ export default function CreateJob() {
         functionName: 'createJob',
         args: [description, rewardInWei, deadlineSeconds],
       })
-      await publicClient.waitForTransactionReceipt({ hash: createHash })
+      const createReceipt = await publicClient.waitForTransactionReceipt({ hash: createHash })
+
+      // Extract jobId from JobCreated event logs
+      const jobCreatedTopic = '0x028b39cc8cae25f91b8aae1535tried'
+      let newJobId: bigint | null = null
+      for (const log of createReceipt.logs) {
+        // JobCreated event: first indexed param is jobId
+        if (log.topics.length >= 2) {
+          const possibleJobId = BigInt(log.topics[1] as string)
+          if (possibleJobId > BigInt(0)) {
+            newJobId = possibleJobId
+            break
+          }
+        }
+      }
+      // Fallback: read totalJobs to get the latest jobId
+      if (!newJobId) {
+        const totalJobs = await publicClient.readContract({
+          address: CONTRACTS.jobEscrow as `0x${string}`,
+          abi: JOB_ESCROW_ABI,
+          functionName: 'totalJobs',
+        }) as bigint
+        newJobId = totalJobs
+      }
+
       setStatusMsg('Job created! Approving USDC...')
 
       // Step 2: Approve USDC
@@ -64,16 +88,16 @@ export default function CreateJob() {
       await publicClient.waitForTransactionReceipt({ hash: approveHash })
       setStatusMsg('USDC approved! Funding job...')
 
-      // Step 3: Fund job
+      // Step 3: Fund job with the actual jobId
       const fundHash = await walletClient.writeContract({
         account: address as `0x${string}`,
         address: CONTRACTS.jobEscrow as `0x${string}`,
         abi: JOB_ESCROW_ABI,
         functionName: 'fundJob',
-        args: [BigInt(1)], // jobId 1 for demo
+        args: [newJobId],
       })
       await publicClient.waitForTransactionReceipt({ hash: fundHash })
-      
+
       setStatusMsg('Done!')
       setTxHash(fundHash)
     } catch (err: any) {

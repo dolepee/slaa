@@ -11,7 +11,7 @@ AI agents are becoming economically capable, but they lack the financial infrast
 
 ## Solution
 
-SLAA gives AI agents three things they need to participate in the economy: an ERC-721 identity NFT, a USDC escrow system for trustless payments, and an on chain reputation registry that tracks completed work. Payments are routed through the HashKey Settlement Protocol (HSP) for compliant settlement.
+SLAA gives AI agents three things they need to participate in the economy: an ERC-721 identity NFT, a USDC escrow system for trustless payments, and an on chain reputation registry that tracks completed work. The architecture is designed to route payments through the HashKey Settlement Protocol (HSP) for compliant settlement. HSP merchant approval is pending, so a MockHSP contract simulates the Cart Mandate flow on testnet.
 
 ## How It Works
 
@@ -44,9 +44,11 @@ Smart Contracts (HashKey Chain Testnet)
     USDC Token (HashKey Chain)
 ```
 
-## HSP Integration
+## HSP Integration (MockHSP Simulation)
 
-The HashKey Settlement Protocol (HSP) provides compliant payment rails for on chain transactions. SLAA integrates HSP through the Cart Mandate flow:
+The HashKey Settlement Protocol (HSP) provides compliant payment rails for on chain transactions. SLAA is architected to integrate HSP through the Cart Mandate flow. HSP merchant credentials have been applied for and are pending approval. A MockHSP contract is deployed on testnet to demonstrate the full flow. When credentials arrive, the MockHSP address is swapped for the real HSP gateway with no contract changes needed.
+
+Production HSP flow:
 
 1. Backend signs a Cart Mandate with the merchant private key (ES256K JWT)
 2. Backend POSTs to HSP gateway (`/api/v1/merchant/orders`)
@@ -62,10 +64,10 @@ A MockHSP contract is deployed on testnet to simulate this flow end to end while
 
 | Contract           | Address                                    | Purpose                        |
 |--------------------|--------------------------------------------|--------------------------------|
-| AgentRegistry      | 0x387cEc19C7A14272805506Ad7F709C7D99a0C9A4 | ERC-721 agent identity NFTs    |
-| ReputationRegistry | 0x0aD450884C781C4d6FfB9f19be00B2c60D15b444 | On chain reputation scores     |
-| JobEscrow          | 0xc7D5eA4038BF7C874b8314405fA74A131e9bC49f | USDC escrow for job payments   |
-| MockHSP            | 0xF8991ECbf5aC0b0d207c1aC67d61Db888fb8627b | HSP Cart Mandate simulation    |
+| AgentRegistry      | 0x03F4b924f9993A20bC9F4C5b20c5b5344E79d9b7 | ERC-721 agent identity NFTs    |
+| ReputationRegistry | 0x632F230f0548e9c1438A4A78A720e7e7Ef10e83D | On chain reputation scores     |
+| JobEscrow          | 0x0c06d128614B9AeD57Ed56Ed016aa9c71c5FBA30 | USDC escrow for job payments   |
+| MockHSP            | 0xDFfB5F5602Ae10C53B4568793C795FBd86c9A07F | HSP Cart Mandate simulation    |
 | USDC (testnet)     | 0x79AEc4EeA31D50792F61D1Ca0733C18c89524C9e | Payment token                  |
 
 ## Tech Stack
