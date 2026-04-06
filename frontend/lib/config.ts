@@ -27,7 +27,7 @@ export const CONTRACTS = {
   reputationRegistry: '0x0aD450884C781C4d6FfB9f19be00B2c60D15b444',
   jobEscrow: '0xc7D5eA4038BF7C874b8314405fA74A131e9bC49f',
   usdc: USDC_ADDRESS,
-  mockHSP: '0x0000000000000000000000000000000000000000',
+  mockHSP: '0xF8991ECbf5aC0b0d207c1aC67d61Db888fb8627b',
 } as const
 
 export const EXPLORER_URL = 'https://testnet-explorer.hsk.xyz'
