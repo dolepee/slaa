@@ -9,6 +9,7 @@ import { AGENT_REGISTRY_ABI } from '@/lib/contracts'
 
 export default function Marketplace() {
   const [agents, setAgents] = useState<number[]>([])
+  const [agentProfiles, setAgentProfiles] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -28,8 +29,22 @@ export default function Marketplace() {
         functionName: 'totalAgents',
       }) as bigint
 
-      const agentIds = Array.from({ length: Number(count) }, (_, i) => i + 1)
-      setAgents(agentIds)
+      const profiles = []
+      for (let i = 1; i <= Number(count); i++) {
+        try {
+          const profile = await publicClient.readContract({
+            address: CONTRACTS.agentRegistry as `0x${string}`,
+            abi: AGENT_REGISTRY_ABI,
+            functionName: 'getAgentProfile',
+            args: [BigInt(i)],
+          }) as any
+          profiles.push({ tokenId: i, name: profile.name || profile[0], capabilities: profile.capabilities || profile[1], endpoint: profile.endpoint || profile[2], wallet: profile.wallet || profile[3], totalJobs: profile.totalJobs || profile[4], completedJobs: profile.completedJobs || profile[5] })
+        } catch (err) {
+          profiles.push({ tokenId: i, name: `Agent #${i}`, capabilities: 'Unknown', endpoint: '', wallet: '', totalJobs: BigInt(0), completedJobs: BigInt(0) })
+        }
+      }
+      setAgentProfiles(profiles)
+      setAgents(Array.from({ length: Number(count) }, (_, i) => i + 1))
     } catch (err) {
       console.error('Failed to load agents:', err)
     }
@@ -65,29 +80,32 @@ export default function Marketplace() {
           <div className="text-center py-12">
             <p className="text-gray-500">Loading agents...</p>
           </div>
-        ) : agents.length === 0 ? (
+        ) : agentProfiles.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-xl shadow-md">
             <p className="text-gray-500 mb-4">No agents registered yet.</p>
             <Link href="/agents/register" className="text-blue-600 hover:text-blue-800 font-medium">
-              Be the first to register →
+              Be the first to register
             </Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {agents.map((tokenId) => (
-              <div key={tokenId} className="bg-white rounded-xl shadow-md p-6 border border-gray-100">
+            {agentProfiles.map((agent) => (
+              <div key={agent.tokenId} className="bg-white rounded-xl shadow-md p-6 border border-gray-100">
                 <div className="flex items-start justify-between">
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900">Agent #{tokenId}</h3>
-                    <p className="text-sm text-gray-500">Connect to view details</p>
+                    <h3 className="text-lg font-semibold text-gray-900">{agent.name}</h3>
+                    <p className="text-sm text-gray-500 mt-1">{agent.capabilities}</p>
                   </div>
                   <span className="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
-                    ID #{tokenId}
+                    #{agent.tokenId}
                   </span>
                 </div>
-                <div className="mt-4 pt-4 border-t border-gray-100">
-                  <a href={`${EXPLORER_URL}/address/${CONTRACTS.agentRegistry}`} className="text-sm text-blue-600 hover:text-blue-800">
-                    View Contract →
+                <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center">
+                  <span className="text-sm text-gray-500">
+                    {Number(agent.completedJobs)}/{Number(agent.totalJobs)} jobs completed
+                  </span>
+                  <a href={`${EXPLORER_URL}/address/${agent.wallet}`} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:text-blue-800">
+                    View Wallet
                   </a>
                 </div>
               </div>

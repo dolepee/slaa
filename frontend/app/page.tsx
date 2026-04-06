@@ -1,39 +1,80 @@
 'use client'
 
+import { useState, useEffect } from 'react'
+import { createPublicClient, http, formatUnits } from 'viem'
+import { hashkeyTestnet, CONTRACTS } from '@/lib/config'
+import { AGENT_REGISTRY_ABI, JOB_ESCROW_ABI } from '@/lib/contracts'
 import { WalletConnect } from '@/lib/wallet'
 import Link from 'next/link'
 
-// Agent Card Component
-function AgentCard({ tokenId }: { tokenId: number }) {
-  return (
-    <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100">
-      <div className="flex items-start justify-between">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900">Agent #{tokenId}</h3>
-          <p className="text-sm text-gray-500">Loading...</p>
-        </div>
-        <span className="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
-          ID #{tokenId}
-        </span>
-      </div>
-    </div>
-  )
-}
-
-// Job Card Component  
-function JobCard({ jobId }: { jobId: number }) {
-  return (
-    <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100">
-      <h3 className="text-lg font-semibold text-gray-900">Job #{jobId}</h3>
-      <p className="text-sm text-gray-500 mt-1">Loading...</p>
-      <span className="inline-block mt-2 px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full">
-        USDC
-      </span>
-    </div>
-  )
-}
-
 export default function Home() {
+  const [agentCount, setAgentCount] = useState<number>(0)
+  const [jobCount, setJobCount] = useState<number>(0)
+  const [recentAgents, setRecentAgents] = useState<any[]>([])
+  const [recentJobs, setRecentJobs] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    loadStats()
+  }, [])
+
+  const loadStats = async () => {
+    try {
+      const publicClient = createPublicClient({
+        chain: hashkeyTestnet,
+        transport: http()
+      })
+
+      const agentTotal = await publicClient.readContract({
+        address: CONTRACTS.agentRegistry as `0x${string}`,
+        abi: AGENT_REGISTRY_ABI,
+        functionName: 'totalAgents',
+      }) as bigint
+
+      const jobTotal = await publicClient.readContract({
+        address: CONTRACTS.jobEscrow as `0x${string}`,
+        abi: JOB_ESCROW_ABI,
+        functionName: 'totalJobs',
+      }) as bigint
+
+      setAgentCount(Number(agentTotal))
+      setJobCount(Number(jobTotal))
+
+      const agentNum = Number(agentTotal)
+      const agentPromises = []
+      for (let i = agentNum; i >= Math.max(1, agentNum - 2); i--) {
+        agentPromises.push(
+          publicClient.readContract({
+            address: CONTRACTS.agentRegistry as `0x${string}`,
+            abi: AGENT_REGISTRY_ABI,
+            functionName: 'getAgentProfile',
+            args: [BigInt(i)],
+          }).then((profile: any) => ({ tokenId: i, ...profile }))
+        )
+      }
+      const agents = await Promise.all(agentPromises)
+      setRecentAgents(agents)
+
+      const jobNum = Number(jobTotal)
+      const jobPromises = []
+      for (let i = jobNum; i >= Math.max(1, jobNum - 2); i--) {
+        jobPromises.push(
+          publicClient.readContract({
+            address: CONTRACTS.jobEscrow as `0x${string}`,
+            abi: JOB_ESCROW_ABI,
+            functionName: 'getJob',
+            args: [BigInt(i)],
+          }).then((job: any) => ({ jobId: i, ...job }))
+        )
+      }
+      const fetchedJobs = await Promise.all(jobPromises)
+      setRecentJobs(fetchedJobs)
+    } catch (err) {
+      console.error('Failed to load stats:', err)
+    }
+    setLoading(false)
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
@@ -83,11 +124,11 @@ export default function Home() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           <div className="bg-white rounded-xl shadow-md p-6 text-center">
-            <div className="text-3xl font-bold text-blue-600">--</div>
+            <div className="text-3xl font-bold text-blue-600">{loading ? '...' : agentCount}</div>
             <div className="text-gray-600 mt-1">Registered Agents</div>
           </div>
           <div className="bg-white rounded-xl shadow-md p-6 text-center">
-            <div className="text-3xl font-bold text-green-600">--</div>
+            <div className="text-3xl font-bold text-green-600">{loading ? '...' : jobCount}</div>
             <div className="text-gray-600 mt-1">Active Jobs</div>
           </div>
           <div className="bg-white rounded-xl shadow-md p-6 text-center">
@@ -101,24 +142,75 @@ export default function Home() {
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-semibold text-gray-900">Recent Agents</h3>
               <Link href="/marketplace" className="text-blue-600 hover:text-blue-800 text-sm">
-                View all →
+                View all
               </Link>
             </div>
-            <div className="text-center py-8 bg-white rounded-xl shadow-sm">
-              <p className="text-gray-500">Connect wallet to see agents</p>
-            </div>
+            {loading ? (
+              <div className="text-center py-8 bg-white rounded-xl shadow-sm">
+                <p className="text-gray-500">Loading...</p>
+              </div>
+            ) : recentAgents.length === 0 ? (
+              <div className="text-center py-8 bg-white rounded-xl shadow-sm">
+                <p className="text-gray-500">No agents registered yet</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {recentAgents.map((agent) => (
+                  <div key={agent.tokenId} className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-semibold text-gray-900">{agent.name || `Agent #${agent.tokenId}`}</h4>
+                        <p className="text-sm text-gray-500 mt-1">{agent.capabilities || 'No capabilities listed'}</p>
+                      </div>
+                      <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
+                        #{agent.tokenId}
+                      </span>
+                    </div>
+                    <div className="mt-2 text-xs text-gray-400">
+                      {agent.completedJobs?.toString() || '0'} jobs completed
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div>
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-semibold text-gray-900">Recent Jobs</h3>
               <Link href="/jobs" className="text-blue-600 hover:text-blue-800 text-sm">
-                View all →
+                View all
               </Link>
             </div>
-            <div className="text-center py-8 bg-white rounded-xl shadow-sm">
-              <p className="text-gray-500">Connect wallet to see jobs</p>
-            </div>
+            {loading ? (
+              <div className="text-center py-8 bg-white rounded-xl shadow-sm">
+                <p className="text-gray-500">Loading...</p>
+              </div>
+            ) : recentJobs.length === 0 ? (
+              <div className="text-center py-8 bg-white rounded-xl shadow-sm">
+                <p className="text-gray-500">No jobs posted yet</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {recentJobs.map((job) => (
+                  <Link key={job.jobId} href={`/jobs/${job.jobId}`}>
+                    <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100 hover:shadow-md transition-shadow">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h4 className="font-semibold text-gray-900">{job.description || `Job #${job.jobId}`}</h4>
+                          <p className="text-sm text-gray-500 mt-1">
+                            {formatUnits(job.reward || BigInt(0), 6)} USDC
+                          </p>
+                        </div>
+                        <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
+                          {['Created','Funded','Accepted','Submitted','Released','Disputed','Cancelled'][Number(job.status)] || 'Unknown'}
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -133,7 +225,7 @@ export default function Home() {
             rel="noopener noreferrer"
             className="inline-block px-4 py-2 bg-white text-blue-600 rounded-lg font-medium hover:bg-blue-50 transition-colors"
           >
-            View on DoraHacks →
+            View on DoraHacks
           </a>
         </div>
       </main>

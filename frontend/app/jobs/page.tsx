@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createPublicClient, http } from 'viem'
+import { createPublicClient, http, formatUnits } from 'viem'
 import { hashkeyTestnet, CONTRACTS, EXPLORER_URL } from '@/lib/config'
 import { WalletConnect } from '@/lib/wallet'
 import Link from 'next/link'
@@ -9,6 +9,7 @@ import { JOB_ESCROW_ABI } from '@/lib/contracts'
 
 export default function Jobs() {
   const [jobs, setJobs] = useState<number[]>([])
+  const [jobDetails, setJobDetails] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -28,8 +29,22 @@ export default function Jobs() {
         functionName: 'totalJobs',
       }) as bigint
 
-      const jobIds = Array.from({ length: Number(count) }, (_, i) => i + 1)
-      setJobs(jobIds)
+      const details = []
+      for (let i = 1; i <= Number(count); i++) {
+        try {
+          const job = await publicClient.readContract({
+            address: CONTRACTS.jobEscrow as `0x${string}`,
+            abi: JOB_ESCROW_ABI,
+            functionName: 'getJob',
+            args: [BigInt(i)],
+          }) as any
+          details.push({ jobId: i, employer: job.employer || job[0], reward: job.reward || job[2], description: job.description || job[3], status: job.status ?? job[5] })
+        } catch (err) {
+          details.push({ jobId: i, employer: '', reward: BigInt(0), description: `Job #${i}`, status: 0 })
+        }
+      }
+      setJobDetails(details)
+      setJobs(Array.from({ length: Number(count) }, (_, i) => i + 1))
     } catch (err) {
       console.error('Failed to load jobs:', err)
     }
@@ -65,25 +80,36 @@ export default function Jobs() {
           <div className="text-center py-12">
             <p className="text-gray-500">Loading jobs...</p>
           </div>
-        ) : jobs.length === 0 ? (
+        ) : jobDetails.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-xl shadow-md">
             <p className="text-gray-500 mb-4">No jobs posted yet.</p>
             <Link href="/jobs/create" className="text-blue-600 hover:text-blue-800 font-medium">
-              Be the first to post a job →
+              Be the first to post a job
             </Link>
           </div>
         ) : (
           <div className="grid gap-6">
-            {jobs.map((jobId) => (
-              <Link key={jobId} href={`/jobs/${jobId}`}>
+            {jobDetails.map((job) => (
+              <Link key={job.jobId} href={`/jobs/${job.jobId}`}>
                 <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100 hover:shadow-lg transition-shadow">
                   <div className="flex justify-between items-start">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">Job #{jobId}</h3>
-                      <p className="text-sm text-gray-500 mt-1">Connect to view details</p>
+                      <h3 className="text-lg font-semibold text-gray-900">{job.description || `Job #${job.jobId}`}</h3>
+                      <p className="text-sm text-gray-500 mt-1">
+                        Reward: {formatUnits(job.reward || BigInt(0), 6)} USDC
+                      </p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        Employer: {job.employer ? `${job.employer.slice(0, 6)}...${job.employer.slice(-4)}` : 'Unknown'}
+                      </p>
                     </div>
-                    <span className="px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full">
-                      USDC
+                    <span className={`px-3 py-1 text-sm font-medium rounded-full ${
+                      Number(job.status) === 0 ? 'bg-yellow-100 text-yellow-800' :
+                      Number(job.status) === 1 ? 'bg-blue-100 text-blue-800' :
+                      Number(job.status) === 2 ? 'bg-purple-100 text-purple-800' :
+                      Number(job.status) === 4 ? 'bg-green-100 text-green-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {['Created','Funded','Accepted','Submitted','Released','Disputed','Cancelled'][Number(job.status)] || 'Unknown'}
                     </span>
                   </div>
                 </div>

@@ -8,7 +8,7 @@ export const AGENT_REGISTRY_ABI = [
     inputs: [
       { internalType: 'uint256', name: 'tokenId', type: 'uint256' },
     ],
-    name: 'AgentProfile',
+    name: 'getAgentProfile',
     outputs: [
       { internalType: 'string', name: 'name', type: 'string' },
       { internalType: 'string', name: 'capabilities', type: 'string' },
