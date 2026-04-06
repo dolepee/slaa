@@ -12,6 +12,7 @@ export default function JobDetail({ params }: { params: { id: string } }) {
   const [job, setJob] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [acceptTokenId, setAcceptTokenId] = useState('')
   const [deliverableCID, setDeliverableCID] = useState('')
   const [reputationScore, setReputationScore] = useState('85')
 
@@ -185,7 +186,8 @@ export default function JobDetail({ params }: { params: { id: string } }) {
               <div className="flex gap-3 mb-3">
                 <input
                   type="number"
-                  id="agentTokenId"
+                  value={acceptTokenId}
+                  onChange={(e) => setAcceptTokenId(e.target.value)}
                   placeholder="Agent Token ID"
                   min="1"
                   className="w-40 px-4 py-2 border border-yellow-300 rounded-lg"
@@ -201,13 +203,15 @@ export default function JobDetail({ params }: { params: { id: string } }) {
                         chain: hashkeyTestnet,
                         transport: custom(window.ethereum)
                       })
-                      const tokenIdInput = (document.getElementById('agentTokenId') as HTMLInputElement).value
+                      if (!acceptTokenId) {
+                        throw new Error('Agent token ID is required')
+                      }
                       const hash = await walletClient.writeContract({
                         account: address as `0x${string}`,
                         address: CONTRACTS.jobEscrow as `0x${string}`,
                         abi: JOB_ESCROW_ABI,
                         functionName: 'acceptJob',
-                        args: [BigInt(jobId), BigInt(tokenIdInput)],
+                        args: [BigInt(jobId), BigInt(acceptTokenId)],
                       })
                       console.log('Job accepted:', hash)
                       await loadJob()
@@ -276,12 +280,17 @@ export default function JobDetail({ params }: { params: { id: string } }) {
             </div>
           )}
 
-          <div className="mt-6 pt-4 border-t border-gray-200">
-            <a
-              href={`${EXPLORER_URL}/address/${CONTRACTS.jobEscrow}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm text-blue-600 hover:text-blue-800"
+        <div className="mt-6 pt-4 border-t border-gray-200">
+          {job.fundedViaHSP && (
+            <p className="mb-3 text-sm text-blue-700">
+              This job was funded through the MockHSP testnet simulation path.
+            </p>
+          )}
+          <a
+            href={`${EXPLORER_URL}/address/${CONTRACTS.jobEscrow}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-blue-600 hover:text-blue-800"
             >
               View Contract on Explorer →
             </a>

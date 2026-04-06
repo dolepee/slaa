@@ -164,8 +164,9 @@ async function main() {
       jobId = Number(parsed?.args?.[0]);
       console.log("[PASS] Step 4: Job created with jobId", jobId);
     } else {
-      console.log("[PASS] Step 4: Job created (event parsing skipped)");
-      jobId = 1;
+      const totalJobs = await jobEscrow.totalJobs();
+      jobId = Number(totalJobs);
+      console.log("[PASS] Step 4: Job created (fallback via totalJobs)", jobId);
     }
   } catch (err: any) {
     console.log("[FAIL] Step 4:", err.message || err.reason || "Transaction failed");

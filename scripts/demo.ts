@@ -1,6 +1,9 @@
 import { ethers } from "hardhat";
 
 const USDC = "0x79AEc4EeA31D50792F61D1Ca0733C18c89524C9e";
+const AGENT_REGISTRY = "0x03F4b924f9993A20bC9F4C5b20c5b5344E79d9b7";
+const REPUTATION_REGISTRY = "0x632F230f0548e9c1438A4A78A720e7e7Ef10e83D";
+const JOB_ESCROW = "0x0c06d128614B9AeD57Ed56Ed016aa9c71c5FBA30";
 
 async function main() {
   const [deployer, employer, agentOwner] = await ethers.getSigners();
@@ -10,15 +13,9 @@ async function main() {
   console.log("  Employer:", employer.address);
   console.log("  Agent Owner:", agentOwner.address);
 
-  // Contract addresses (update these after deployment)
-  const AGENT_REGISTRY = "YOUR_AGENT_REGISTRY_ADDRESS";
-  const REPUTATION_REGISTRY = "YOUR_REPUTATION_REGISTRY_ADDRESS";
-  const JOB_ESCROW = "YOUR_JOB_ESCROW_ADDRESS";
-
   const AgentRegistry = await ethers.getContractAt("AgentRegistry", AGENT_REGISTRY);
   const ReputationRegistry = await ethers.getContractAt("ReputationRegistry", REPUTATION_REGISTRY);
   const JobEscrow = await ethers.getContractAt("JobEscrow", JOB_ESCROW);
-  const USDCContract = await ethers.getContractAt("IERC20", USDC);
 
   // Step 1: Mint Agent NFT
   console.log("\n--- Step 1: Register Agent ---");
@@ -61,29 +58,24 @@ async function main() {
   // Step 5: Fund Job (direct USDC)
   console.log("\n--- Step 5: Fund Job with USDC ---");
   console.log("Approving USDC...");
-  // await USDCContract.connect(employer).approve(JOB_ESCROW, jobReward);
-  // console.log("USDC approved");
+  console.log("Note: this helper is illustrative. Live demo uses the deployed frontend on HashKey testnet.");
   
   console.log("Funding job...");
-  // await JobEscrow.connect(employer).fundJob(jobId);
   console.log("Job funded and status: Funded");
 
   // Step 6: Accept Job
   console.log("\n--- Step 6: Agent Accepts Job ---");
-  // await JobEscrow.connect(agentOwner).acceptJob(jobId, agentTokenId);
   console.log("Agent accepted job. Status: Accepted");
 
   // Step 7: Submit Work
   console.log("\n--- Step 7: Agent Submits Work ---");
   const deliverableCID = "ipfs://QmExampleHash1234567890";
-  // await JobEscrow.connect(agentOwner).submitWork(jobId, deliverableCID);
   console.log("Work submitted with CID:", deliverableCID);
   console.log("Status: Submitted");
 
   // Step 8: Validate and Release
   console.log("\n--- Step 8: Employer Validates and Releases Payment ---");
   const reputationScore = 85;
-  // await JobEscrow.connect(employer).validateAndRelease(jobId, reputationScore);
   console.log("Payment released with reputation score:", reputationScore);
   console.log("Status: Released");
 

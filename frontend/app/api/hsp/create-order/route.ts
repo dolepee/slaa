@@ -6,10 +6,11 @@ export async function POST(req: Request) {
 
     const response = {
       success: true,
+      mode: 'mock-hsp-simulation',
       cartMandateId: cartMandateId || `SLAA-JOB-${jobId}-${Date.now()}`,
       jobId,
       amount: rewardUSDC,
-      message: 'Order created. In production, payer would be redirected to HSP checkout. For demo, use MockHSP.payOrder() directly.',
+      message: 'MockHSP order created for testnet architecture validation. In production, payer would be redirected to HSP checkout.',
       hspFlow: {
         step1: 'Merchant signs cart_mandate with ES256K JWT',
         step2: 'POST /api/v1/merchant/orders to HSP gateway',

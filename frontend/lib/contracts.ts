@@ -170,6 +170,8 @@ export const JOB_ESCROW_ABI = [
     anonymous: false,
     inputs: [
       { indexed: true, internalType: 'uint256', name: 'jobId', type: 'uint256' },
+      { indexed: true, internalType: 'address', name: 'employer', type: 'address' },
+      { indexed: false, internalType: 'uint256', name: 'reward', type: 'uint256' },
       { indexed: false, internalType: 'string', name: 'description', type: 'string' },
     ],
     name: 'JobCreated',

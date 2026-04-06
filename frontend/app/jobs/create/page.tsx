@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { createWalletClient, createPublicClient, http, custom, parseUnits } from 'viem'
+import { createWalletClient, createPublicClient, http, custom, parseEventLogs, parseUnits } from 'viem'
 import { hashkeyTestnet, CONTRACTS } from '@/lib/config'
 import { WalletConnect } from '@/lib/wallet'
 import Link from 'next/link'
@@ -14,6 +14,7 @@ export default function CreateJob() {
   const [isLoading, setIsLoading] = useState(false)
   const [statusMsg, setStatusMsg] = useState('')
   const [txHash, setTxHash] = useState<string | null>(null)
+  const [createdJobId, setCreatedJobId] = useState<bigint | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -21,6 +22,7 @@ export default function CreateJob() {
     setIsLoading(true)
     setError(null)
     setTxHash(null)
+    setCreatedJobId(null)
 
     try {
       if (!window.ethereum) {
@@ -52,20 +54,14 @@ export default function CreateJob() {
       })
       const createReceipt = await publicClient.waitForTransactionReceipt({ hash: createHash })
 
-      // Extract jobId from JobCreated event logs
-      const jobCreatedTopic = '0x028b39cc8cae25f91b8aae1535tried'
-      let newJobId: bigint | null = null
-      for (const log of createReceipt.logs) {
-        // JobCreated event: first indexed param is jobId
-        if (log.topics.length >= 2) {
-          const possibleJobId = BigInt(log.topics[1] as string)
-          if (possibleJobId > BigInt(0)) {
-            newJobId = possibleJobId
-            break
-          }
-        }
-      }
-      // Fallback: read totalJobs to get the latest jobId
+      const createdLogs = parseEventLogs({
+        abi: JOB_ESCROW_ABI,
+        eventName: 'JobCreated',
+        logs: createReceipt.logs,
+        strict: false,
+      })
+
+      let newJobId = createdLogs[0]?.args?.jobId ?? null
       if (!newJobId) {
         const totalJobs = await publicClient.readContract({
           address: CONTRACTS.jobEscrow as `0x${string}`,
@@ -100,6 +96,7 @@ export default function CreateJob() {
 
       setStatusMsg('Done!')
       setTxHash(fundHash)
+      setCreatedJobId(newJobId)
     } catch (err: any) {
       setError(err.message || 'Transaction failed')
     }
@@ -198,6 +195,11 @@ export default function CreateJob() {
             {txHash && (
               <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
                 <p className="text-green-800 font-medium">Job created and funded successfully!</p>
+                {createdJobId && (
+                  <Link href={`/jobs/${createdJobId.toString()}`} className="block mt-2 text-green-600 hover:text-green-800 text-sm">
+                    View job #{createdJobId.toString()} →
+                  </Link>
+                )}
                 <a 
                   href={`${hashkeyTestnet.blockExplorers?.default?.url}/tx/${txHash}`}
                   target="_blank"
@@ -222,6 +224,9 @@ export default function CreateJob() {
             <li>Agent submits work with deliverable</li>
             <li>You validate and release payment</li>
           </ol>
+          <p className="mt-3 text-sm text-blue-700">
+            HSP funding is currently demonstrated through MockHSP on testnet while merchant approval is pending.
+          </p>
         </div>
       </main>
     </div>

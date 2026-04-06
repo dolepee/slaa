@@ -170,6 +170,19 @@ describe("JobEscrow", function () {
     expect(balanceAfter - balanceBefore).to.equal(JOB_REWARD);
   });
 
+  it("Should refund USDC on cancel of HSP-funded job", async function () {
+    await jobEscrow.connect(employer).createJob("HSP refund job", JOB_REWARD, 7 * 24 * 60 * 60);
+
+    await usdc.mint(await jobEscrow.getAddress(), JOB_REWARD);
+    await jobEscrow.connect(owner).confirmHSPFunding(1, "test-hsp-refund");
+
+    const balanceBefore = await usdc.balanceOf(employer.address);
+    await jobEscrow.connect(employer).cancelJob(1);
+    const balanceAfter = await usdc.balanceOf(employer.address);
+
+    expect(balanceAfter - balanceBefore).to.equal(JOB_REWARD);
+  });
+
   it("Should update agent job counts", async function () {
     await jobEscrow.connect(employer).createJob("Test job", JOB_REWARD, 7 * 24 * 60 * 60);
     await usdc.connect(employer).approve(await jobEscrow.getAddress(), JOB_REWARD);

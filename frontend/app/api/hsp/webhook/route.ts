@@ -10,11 +10,11 @@ export async function POST(req: Request) {
       console.log(`HSP Payment Confirmed:`)
       console.log(`  Cart Mandate: ${cart_mandate_id}`)
       console.log(`  TX: ${tx_signature}`)
-      console.log(`  Action: Would call JobEscrow.confirmHSPFunding()`)
+      console.log(`  Action: MockHSP simulation only; production webhook would call JobEscrow.confirmHSPFunding()`)
 
       return NextResponse.json({
         code: 0,
-        message: 'Webhook received. In production, this triggers JobEscrow.confirmHSPFunding().',
+        message: 'MockHSP webhook acknowledged. Production HSP webhook would verify signature and trigger JobEscrow.confirmHSPFunding().',
       })
     }
 

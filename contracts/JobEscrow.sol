@@ -159,7 +159,7 @@ contract JobEscrow {
             "Cannot cancel after acceptance"
         );
 
-        if (job.status == JobStatus.Funded && !job.fundedViaHSP) {
+        if (job.status == JobStatus.Funded) {
             usdc.safeTransfer(job.employer, job.reward);
         }
 

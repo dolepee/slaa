@@ -46,7 +46,7 @@ Smart Contracts (HashKey Chain Testnet)
 
 ## HSP Integration (MockHSP Simulation)
 
-The HashKey Settlement Protocol (HSP) provides compliant payment rails for on chain transactions. SLAA is architected to integrate HSP through the Cart Mandate flow. HSP merchant credentials have been applied for and are pending approval. A MockHSP contract is deployed on testnet to demonstrate the full flow. When credentials arrive, the MockHSP address is swapped for the real HSP gateway with no contract changes needed.
+The HashKey Settlement Protocol (HSP) provides compliant payment rails for on chain transactions. SLAA is architected to integrate HSP through the Cart Mandate flow. HSP merchant credentials have been applied for and are pending approval. A MockHSP contract is deployed on testnet to validate the funding architecture end to end. When credentials arrive, the MockHSP layer is intended to be replaced by the real HSP gateway with minimal or no protocol-level contract changes.
 
 Production HSP flow:
 
@@ -58,7 +58,7 @@ Production HSP flow:
 6. HSP sends a webhook to `/api/hsp/webhook` with `payment-successful` status
 7. Backend verifies the webhook signature (HMAC-SHA256) and calls `JobEscrow.confirmHSPFunding()`
 
-A MockHSP contract is deployed on testnet to simulate this flow end to end while awaiting HSP merchant approval. The MockHSP contract mirrors the real HSP Cart Mandate lifecycle: create order, payer authorization, and settlement to the merchant (JobEscrow).
+A MockHSP contract is deployed on testnet to simulate this flow end to end while awaiting HSP merchant approval. The MockHSP contract follows the same architectural phases as the real HSP Cart Mandate flow: order creation, payer authorization, and settlement into the merchant contract (`JobEscrow`).
 
 ## Deployed Contracts (HashKey Chain Testnet, Chain ID 133)
 
@@ -90,8 +90,8 @@ A MockHSP contract is deployed on testnet to simulate this flow end to end while
 
 ## API Routes
 
-- `POST /api/hsp/create-order` creates an HSP Cart Mandate order for job funding
-- `POST /api/hsp/webhook` receives HSP payment confirmation and triggers on chain settlement
+- `POST /api/hsp/create-order` returns the MockHSP testnet funding payload used in the demo architecture
+- `POST /api/hsp/webhook` acknowledges the simulated HSP funding callback path
 
 ## Quick Start
 
@@ -99,7 +99,7 @@ A MockHSP contract is deployed on testnet to simulate this flow end to end while
 # Contracts
 cd slaa
 npm install --legacy-peer-deps
-npx hardhat test          # 17 tests passing
+npx hardhat test          # 21 tests passing
 npx hardhat compile
 
 # Deploy to testnet

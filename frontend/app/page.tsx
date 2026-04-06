@@ -10,6 +10,7 @@ import Link from 'next/link'
 export default function Home() {
   const [agentCount, setAgentCount] = useState<number>(0)
   const [jobCount, setJobCount] = useState<number>(0)
+  const [totalVolume, setTotalVolume] = useState<number>(0)
   const [recentAgents, setRecentAgents] = useState<any[]>([])
   const [recentJobs, setRecentJobs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -63,10 +64,11 @@ export default function Home() {
       }
       setRecentAgents(agentResults)
 
-      // Fetch recent jobs individually
+      // Fetch jobs individually so stats can tolerate partial read failures
       const jobNum = Number(jobTotal)
       const jobResults: any[] = []
-      for (let i = jobNum; i >= Math.max(1, jobNum - 2); i--) {
+      let fundedVolume = BigInt(0)
+      for (let i = jobNum; i >= 1; i--) {
         try {
           const job = await publicClient.readContract({
             address: CONTRACTS.jobEscrow as `0x${string}`,
@@ -74,17 +76,25 @@ export default function Home() {
             functionName: 'getJob',
             args: [BigInt(i)],
           }) as any
-          jobResults.push({
-            jobId: i,
-            description: job.description ?? job[3] ?? `Job #${i}`,
-            reward: job.reward ?? job[2] ?? BigInt(0),
-            status: job.status ?? job[5] ?? 0,
-          })
+          const reward = job.reward ?? job[2] ?? BigInt(0)
+          const status = job.status ?? job[5] ?? 0
+          if (Number(status) >= 1 && Number(status) <= 4) {
+            fundedVolume += reward
+          }
+          if (jobResults.length < 3) {
+            jobResults.push({
+              jobId: i,
+              description: job.description ?? job[3] ?? `Job #${i}`,
+              reward,
+              status,
+            })
+          }
         } catch (err) {
           console.error(`Failed to load job ${i}:`, err)
         }
       }
       setRecentJobs(jobResults)
+      setTotalVolume(Number(formatUnits(fundedVolume, 6)))
     } catch (err) {
       console.error('Failed to load stats:', err)
     }
@@ -120,7 +130,7 @@ export default function Home() {
           </h2>
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
             AI agents need PayFi infrastructure. SLAA provides on-chain identity, 
-            escrow with validation triggers, and HSP payment rails on HashKey Chain.
+            escrow with validation triggers, and HSP-ready payment rails on HashKey Chain.
           </p>
           <div className="flex justify-center gap-4">
             <Link
@@ -145,10 +155,10 @@ export default function Home() {
           </div>
           <div className="bg-white rounded-xl shadow-md p-6 text-center">
             <div className="text-3xl font-bold text-green-600">{loading ? '...' : jobCount}</div>
-            <div className="text-gray-600 mt-1">Active Jobs</div>
+            <div className="text-gray-600 mt-1">Jobs Created</div>
           </div>
           <div className="bg-white rounded-xl shadow-md p-6 text-center">
-            <div className="text-3xl font-bold text-purple-600">$0</div>
+            <div className="text-3xl font-bold text-purple-600">{loading ? '...' : `$${totalVolume}`}</div>
             <div className="text-gray-600 mt-1">Total Volume</div>
           </div>
         </div>
@@ -234,6 +244,9 @@ export default function Home() {
           <h3 className="text-2xl font-bold mb-2">Built for HashKey Chain Horizon Hackathon</h3>
           <p className="text-blue-100 mb-4">
             PayFi track • ERC-8004 Agent Identity • HSP Integration • KYC Gated
+          </p>
+          <p className="text-sm text-blue-100/90 mb-4">
+            Current testnet demo uses MockHSP to simulate the Cart Mandate funding flow while merchant approval is pending.
           </p>
           <a
             href="https://dorahacks.io/hackathon/2045/detail"
