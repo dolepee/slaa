@@ -8,6 +8,7 @@ const AGENT_REGISTRY = "0x387cEc19C7A14272805506Ad7F709C7D99a0C9A4";
 const REPUTATION_REGISTRY = "0x0aD450884C781C4d6FfB9f19be00B2c60D15b444";
 const JOB_ESCROW = "0xc7D5eA4038BF7C874b8314405fA74A131e9bC49f";
 const USDC = "0x79AEc4EeA31D50792F61D1Ca0733C18c89524C9e";
+const MOCK_HSP = "0x0000000000000000000000000000000000000000";
 
 const AGENT_REGISTRY_ABI = [
   "function mintAgent(string name, string capabilities, string endpoint) external returns (uint256)",
@@ -21,6 +22,12 @@ const JOB_ESCROW_ABI = [
   "function getJob(uint256 jobId) external view returns (tuple(address employer, uint256 agentTokenId, uint256 reward, string description, string deliverableCID, uint8 status, uint256 deadline, bool fundedViaHSP))",
   "function totalJobs() external view returns (uint256)",
   "event JobCreated(uint256 indexed jobId, address indexed employer, uint256 reward, string description)"
+];
+
+const MOCK_HSP_ABI = [
+  "function createOrder(string cartMandateId, address merchant, uint256 amount, uint256 expirySeconds) external",
+  "function getOrder(string cartMandateId) external view returns (tuple(string cartMandateId, address merchant, address payer, uint256 amount, address token, uint8 status, uint256 createdAt, uint256 expiresAt))",
+  "function totalOrders() external view returns (uint256)"
 ];
 
 async function main() {
@@ -190,11 +197,35 @@ async function main() {
   }
 
   console.log();
+  console.log("[STEP 7] Create MockHSP Order");
+  console.log("-".repeat(40));
+  try {
+    const mockHSP = new ethers.Contract(MOCK_HSP, MOCK_HSP_ABI, wallet);
+    const cartMandateId = `SLAA-JOB-${jobId}-${Date.now()}`;
+    const orderAmount = ethers.parseUnits("10", 6);
+
+    console.log("[INFO] Creating HSP order:", cartMandateId);
+    const tx = await mockHSP.createOrder(cartMandateId, JOB_ESCROW, orderAmount, 7200);
+    console.log("[INFO] Tx submitted:", tx.hash);
+    const receipt = await tx.wait();
+    console.log("[INFO] Tx confirmed in block:", receipt.blockNumber);
+
+    const order = await mockHSP.getOrder(cartMandateId);
+    console.log("[INFO] Order merchant:", order.merchant);
+    console.log("[INFO] Order amount:", ethers.formatUnits(order.amount, 6), "USDC");
+    console.log("[INFO] Order status:", Number(order.status) === 0 ? "Created" : "Other");
+    console.log("[PASS] Step 7: MockHSP order created:", cartMandateId);
+  } catch (err: any) {
+    console.log("[FAIL] Step 7:", err.message || "Transaction failed");
+  }
+
+  console.log();
   console.log("=".repeat(60));
   console.log("TESTNET FLOW TEST COMPLETE");
   console.log("=".repeat(60));
   console.log("Agent registered: tokenId", agentTokenId);
   console.log("Job created: jobId", jobId);
+  console.log("MockHSP order: created");
   console.log("All on-chain transactions confirmed on HashKey Chain Testnet");
   console.log("Explorer: https://testnet-explorer.hsk.xyz");
   console.log("=".repeat(60));

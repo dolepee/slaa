@@ -37,6 +37,14 @@ async function main() {
   await reputationRegistry.setJobEscrow(escrowAddr);
   console.log("ReputationRegistry -> JobEscrow: OK");
 
+  // 5. Deploy MockHSP
+  console.log("\nDeploying MockHSP...");
+  const MockHSP = await ethers.getContractFactory("MockHSP");
+  const mockHSP = await MockHSP.deploy(USDC);
+  await mockHSP.waitForDeployment();
+  const mockHSPAddr = await mockHSP.getAddress();
+  console.log("MockHSP deployed to:", mockHSPAddr);
+
   console.log("\n" + "=".repeat(60));
   console.log("DEPLOYMENT COMPLETE");
   console.log("=".repeat(60));
@@ -44,6 +52,7 @@ async function main() {
   console.log(`  AgentRegistry:    ${agentAddr}`);
   console.log(`  ReputationRegistry: ${repAddr}`);
   console.log(`  JobEscrow:       ${escrowAddr}`);
+  console.log(`  MockHSP:         ${mockHSPAddr}`);
   console.log("\nUpdate these in frontend/lib/config.ts");
   console.log("\nExplorer: https://testnet-explorer.hsk.xyz/");
 }

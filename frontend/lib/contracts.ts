@@ -234,3 +234,75 @@ export const USDC_ABI = [
     type: 'function',
   },
 ] as const
+
+export const MOCK_HSP_ABI = [
+  {
+    inputs: [
+      { internalType: 'string', name: 'cartMandateId', type: 'string' },
+      { internalType: 'address', name: 'merchant', type: 'address' },
+      { internalType: 'uint256', name: 'amount', type: 'uint256' },
+      { internalType: 'uint256', name: 'expirySeconds', type: 'uint256' },
+    ],
+    name: 'createOrder',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [{ internalType: 'string', name: 'cartMandateId', type: 'string' }],
+    name: 'payOrder',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [{ internalType: 'string', name: 'cartMandateId', type: 'string' }],
+    name: 'getOrder',
+    outputs: [
+      {
+        components: [
+          { internalType: 'string', name: 'cartMandateId', type: 'string' },
+          { internalType: 'address', name: 'merchant', type: 'address' },
+          { internalType: 'address', name: 'payer', type: 'address' },
+          { internalType: 'uint256', name: 'amount', type: 'uint256' },
+          { internalType: 'address', name: 'token', type: 'address' },
+          { internalType: 'uint8', name: 'status', type: 'uint8' },
+          { internalType: 'uint256', name: 'createdAt', type: 'uint256' },
+          { internalType: 'uint256', name: 'expiresAt', type: 'uint256' },
+        ],
+        internalType: 'struct MockHSP.CartMandate',
+        name: '',
+        type: 'tuple',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'totalOrders',
+    outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, internalType: 'string', name: 'cartMandateId', type: 'string' },
+      { indexed: true, internalType: 'address', name: 'payer', type: 'address' },
+      { indexed: false, internalType: 'uint256', name: 'amount', type: 'uint256' },
+    ],
+    name: 'OrderCreated',
+    type: 'event',
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, internalType: 'string', name: 'cartMandateId', type: 'string' },
+      { indexed: true, internalType: 'address', name: 'merchant', type: 'address' },
+      { indexed: false, internalType: 'uint256', name: 'amount', type: 'uint256' },
+    ],
+    name: 'PaymentSuccessful',
+    type: 'event',
+  },
+] as const
