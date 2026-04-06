@@ -40,35 +40,51 @@ export default function Home() {
       setAgentCount(Number(agentTotal))
       setJobCount(Number(jobTotal))
 
+      // Fetch recent agents individually so one failure doesn't break all
       const agentNum = Number(agentTotal)
-      const agentPromises = []
+      const agentResults: any[] = []
       for (let i = agentNum; i >= Math.max(1, agentNum - 2); i--) {
-        agentPromises.push(
-          publicClient.readContract({
+        try {
+          const profile = await publicClient.readContract({
             address: CONTRACTS.agentRegistry as `0x${string}`,
             abi: AGENT_REGISTRY_ABI,
             functionName: 'getAgentProfile',
             args: [BigInt(i)],
-          }).then((profile: any) => ({ tokenId: i, ...profile }))
-        )
+          }) as any
+          agentResults.push({
+            tokenId: i,
+            name: profile.name ?? profile[0] ?? `Agent #${i}`,
+            capabilities: profile.capabilities ?? profile[1] ?? '',
+            completedJobs: profile.completedJobs ?? profile[5] ?? BigInt(0),
+          })
+        } catch (err) {
+          console.error(`Failed to load agent ${i}:`, err)
+        }
       }
-      const agents = await Promise.all(agentPromises)
-      setRecentAgents(agents)
+      setRecentAgents(agentResults)
 
+      // Fetch recent jobs individually
       const jobNum = Number(jobTotal)
-      const jobPromises = []
+      const jobResults: any[] = []
       for (let i = jobNum; i >= Math.max(1, jobNum - 2); i--) {
-        jobPromises.push(
-          publicClient.readContract({
+        try {
+          const job = await publicClient.readContract({
             address: CONTRACTS.jobEscrow as `0x${string}`,
             abi: JOB_ESCROW_ABI,
             functionName: 'getJob',
             args: [BigInt(i)],
-          }).then((job: any) => ({ jobId: i, ...job }))
-        )
+          }) as any
+          jobResults.push({
+            jobId: i,
+            description: job.description ?? job[3] ?? `Job #${i}`,
+            reward: job.reward ?? job[2] ?? BigInt(0),
+            status: job.status ?? job[5] ?? 0,
+          })
+        } catch (err) {
+          console.error(`Failed to load job ${i}:`, err)
+        }
       }
-      const fetchedJobs = await Promise.all(jobPromises)
-      setRecentJobs(fetchedJobs)
+      setRecentJobs(jobResults)
     } catch (err) {
       console.error('Failed to load stats:', err)
     }
