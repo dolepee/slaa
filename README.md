@@ -64,11 +64,11 @@ A MockHSP contract is deployed on testnet to simulate this flow end to end while
 
 | Contract           | Address                                    | Purpose                        |
 |--------------------|--------------------------------------------|--------------------------------|
-| AgentRegistry      | 0x03F4b924f9993A20bC9F4C5b20c5b5344E79d9b7 | ERC-721 agent identity NFTs    |
-| ReputationRegistry | 0x632F230f0548e9c1438A4A78A720e7e7Ef10e83D | On chain reputation scores     |
-| JobEscrow          | 0x0c06d128614B9AeD57Ed56Ed016aa9c71c5FBA30 | USDC escrow for job payments   |
-| MockHSP            | 0xDFfB5F5602Ae10C53B4568793C795FBd86c9A07F | HSP Cart Mandate simulation    |
-| USDC (testnet)     | 0x79AEc4EeA31D50792F61D1Ca0733C18c89524C9e | Payment token                  |
+| AgentRegistry      | 0x30a1E5d11EB7bED3a54Ae19a5C9D7EB8370b7948 | ERC-721 agent identity NFTs    |
+| ReputationRegistry | 0x1DbBa2cC54194Ca359Efe4eEDabe0722b966867F | On chain reputation scores     |
+| JobEscrow          | 0x3770bC9D78DefBdc8b8fB691ad99073Fe82aFc51 | USDC escrow for job payments   |
+| MockHSP            | 0x5A9BeC5eA455028eCf958693a2d661B95e779c1A | HSP Cart Mandate simulation    |
+| USDC (testnet)     | 0x8FE3cB719Ee4410E236Cd6b72ab1fCDC06eF53c6 | Payment token                  |
 
 ## Tech Stack
 

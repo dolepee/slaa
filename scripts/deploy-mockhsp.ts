@@ -1,7 +1,7 @@
 import { ethers } from "hardhat";
 
 async function main() {
-  const USDC = "0x79AEc4EeA31D50792F61D1Ca0733C18c89524C9e";
+  const USDC = "0x8FE3cB719Ee4410E236Cd6b72ab1fCDC06eF53c6";
 
   console.log("Deploying MockHSP only...");
   const MockHSP = await ethers.getContractFactory("MockHSP");

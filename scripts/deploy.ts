@@ -3,7 +3,7 @@ import { ethers } from "hardhat";
 async function main() {
   console.log("Deploying SLAA contracts to HashKey Chain Testnet...\n");
 
-  const USDC = "0x79AEc4EeA31D50792F61D1Ca0733C18c89524C9e";
+  const USDC = "0x8FE3cB719Ee4410E236Cd6b72ab1fCDC06eF53c6";
 
   // 1. Deploy AgentRegistry
   console.log("Deploying AgentRegistry...");
