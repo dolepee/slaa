@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createHash, createHmac, randomBytes } from 'crypto'
-import { SignJWT, importPKCS8 } from 'jose'
+import { createHash, createHmac, createPrivateKey, createSign, randomBytes } from 'crypto'
 import { CONTRACTS } from '../../../../lib/config'
 
 const HSP_BASE = process.env.HSP_API_BASE || 'https://merchant-qa.hashkeymerchant.com'
@@ -29,6 +28,26 @@ function canonicalJSON(obj: unknown): string {
 function hmacSign(method: string, path: string, query: string, bodyHash: string, timestamp: string, nonce: string): string {
   const message = `${method}\n${path}\n${query}\n${bodyHash}\n${timestamp}\n${nonce}`
   return createHmac('sha256', HSP_APP_SECRET).update(message).digest('hex')
+}
+
+function base64UrlEncode(value: string): string {
+  return Buffer.from(value).toString('base64url')
+}
+
+function signMerchantAuthorization(claims: Record<string, unknown>): string {
+  const header = base64UrlEncode(JSON.stringify({ alg: 'ES256K', typ: 'JWT' }))
+  const payload = base64UrlEncode(JSON.stringify(claims))
+  const signingInput = `${header}.${payload}`
+
+  const signature = createSign('SHA256')
+    .update(signingInput)
+    .end()
+    .sign({
+      key: createPrivateKey(HSP_MERCHANT_PRIVATE_KEY),
+      dsaEncoding: 'ieee-p1363',
+    })
+
+  return `${signingInput}.${signature.toString('base64url')}`
 }
 
 export async function POST(req: Request) {
@@ -92,18 +111,16 @@ export async function POST(req: Request) {
     const canonical = canonicalJSON(contents)
     const cartHash = createHash('sha256').update(canonical).digest('hex')
 
-    // ES256K JWT
-    const privateKey = await importPKCS8(HSP_MERCHANT_PRIVATE_KEY, 'ES256K')
     const now = Math.floor(Date.now() / 1000)
-    const jwt = await new SignJWT({ cart_hash: cartHash })
-      .setProtectedHeader({ alg: 'ES256K', typ: 'JWT' })
-      .setIssuer(MERCHANT_NAME)
-      .setSubject(MERCHANT_NAME)
-      .setAudience('HashkeyMerchant')
-      .setIssuedAt(now)
-      .setExpirationTime(now + 3600)
-      .setJti(`JWT-${now}-${randomBytes(8).toString('hex')}`)
-      .sign(privateKey)
+    const jwt = signMerchantAuthorization({
+      cart_hash: cartHash,
+      iss: MERCHANT_NAME,
+      sub: MERCHANT_NAME,
+      aud: 'HashkeyMerchant',
+      iat: now,
+      exp: now + 3600,
+      jti: `JWT-${now}-${randomBytes(8).toString('hex')}`,
+    })
 
     const body = {
       cart_mandate: {
