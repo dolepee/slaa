@@ -11,10 +11,12 @@ export default function CreateJob() {
   const [description, setDescription] = useState('')
   const [reward, setReward] = useState('')
   const [deadline, setDeadline] = useState('7')
+  const [fundingMethod, setFundingMethod] = useState<'direct' | 'hsp'>('direct')
   const [isLoading, setIsLoading] = useState(false)
   const [statusMsg, setStatusMsg] = useState('')
   const [txHash, setTxHash] = useState<string | null>(null)
   const [createdJobId, setCreatedJobId] = useState<bigint | null>(null)
+  const [hspPaymentUrl, setHspPaymentUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -23,6 +25,7 @@ export default function CreateJob() {
     setError(null)
     setTxHash(null)
     setCreatedJobId(null)
+    setHspPaymentUrl(null)
 
     try {
       if (!window.ethereum) {
@@ -40,11 +43,11 @@ export default function CreateJob() {
         transport: http()
       })
 
-      const rewardInWei = parseUnits(reward, 6) // USDC has 6 decimals
+      const rewardInWei = parseUnits(reward, 6)
       const deadlineSeconds = BigInt(parseInt(deadline) * 24 * 60 * 60)
 
-      // Step 1: Create job
-      setStatusMsg('Creating job...')
+      // Step 1: Create job on-chain
+      setStatusMsg('Creating job on chain...')
       const createHash = await walletClient.writeContract({
         account: address as `0x${string}`,
         address: CONTRACTS.jobEscrow as `0x${string}`,
@@ -71,32 +74,53 @@ export default function CreateJob() {
         newJobId = totalJobs
       }
 
-      setStatusMsg('Job created! Approving USDC...')
-
-      // Step 2: Approve USDC
-      const approveHash = await walletClient.writeContract({
-        account: address as `0x${string}`,
-        address: CONTRACTS.usdc as `0x${string}`,
-        abi: USDC_ABI,
-        functionName: 'approve',
-        args: [CONTRACTS.jobEscrow as `0x${string}`, rewardInWei],
-      })
-      await publicClient.waitForTransactionReceipt({ hash: approveHash })
-      setStatusMsg('USDC approved! Funding job...')
-
-      // Step 3: Fund job with the actual jobId
-      const fundHash = await walletClient.writeContract({
-        account: address as `0x${string}`,
-        address: CONTRACTS.jobEscrow as `0x${string}`,
-        abi: JOB_ESCROW_ABI,
-        functionName: 'fundJob',
-        args: [newJobId],
-      })
-      await publicClient.waitForTransactionReceipt({ hash: fundHash })
-
-      setStatusMsg('Done!')
-      setTxHash(fundHash)
       setCreatedJobId(newJobId)
+
+      if (fundingMethod === 'direct') {
+        // Direct USDC: approve + fundJob
+        setStatusMsg('Job created! Approving USDC...')
+        const approveHash = await walletClient.writeContract({
+          account: address as `0x${string}`,
+          address: CONTRACTS.usdc as `0x${string}`,
+          abi: USDC_ABI,
+          functionName: 'approve',
+          args: [CONTRACTS.jobEscrow as `0x${string}`, rewardInWei],
+        })
+        await publicClient.waitForTransactionReceipt({ hash: approveHash })
+        setStatusMsg('USDC approved! Funding job...')
+
+        const fundHash = await walletClient.writeContract({
+          account: address as `0x${string}`,
+          address: CONTRACTS.jobEscrow as `0x${string}`,
+          abi: JOB_ESCROW_ABI,
+          functionName: 'fundJob',
+          args: [newJobId],
+        })
+        await publicClient.waitForTransactionReceipt({ hash: fundHash })
+
+        setStatusMsg('Done!')
+        setTxHash(fundHash)
+      } else {
+        // HSP payment flow
+        setStatusMsg('Job created! Initiating HSP payment...')
+
+        const res = await fetch('/api/hsp/create-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jobId: Number(newJobId), rewardUSDC: reward }),
+        })
+
+        const data = await res.json()
+        if (!data.success) {
+          throw new Error(data.error || 'Failed to create HSP order')
+        }
+
+        setStatusMsg('Redirecting to HSP checkout...')
+        setHspPaymentUrl(data.paymentUrl)
+
+        // Redirect to HSP checkout
+        window.location.href = data.paymentUrl
+      }
     } catch (err: any) {
       setError(err.message || 'Transaction failed')
     }
@@ -125,7 +149,7 @@ export default function CreateJob() {
       <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white rounded-xl shadow-md p-8">
           <h1 className="text-2xl font-bold text-gray-900 mb-6">Post a New Job</h1>
-          
+
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -176,6 +200,38 @@ export default function CreateJob() {
               />
             </div>
 
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                Funding Method
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setFundingMethod('direct')}
+                  className={`p-4 rounded-lg border-2 text-left transition-colors ${
+                    fundingMethod === 'direct'
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <div className="font-medium text-gray-900">Direct USDC</div>
+                  <div className="text-xs text-gray-500 mt-1">Approve and transfer USDC directly to escrow</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFundingMethod('hsp')}
+                  className={`p-4 rounded-lg border-2 text-left transition-colors ${
+                    fundingMethod === 'hsp'
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <div className="font-medium text-gray-900">HSP Checkout</div>
+                  <div className="text-xs text-gray-500 mt-1">Pay via HashKey Settlement Protocol</div>
+                </button>
+              </div>
+            </div>
+
             {error && (
               <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
                 <p className="text-red-800 text-sm">{error}</p>
@@ -188,7 +244,7 @@ export default function CreateJob() {
                 disabled={isLoading}
                 className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
               >
-                {isLoading ? statusMsg || 'Processing...' : 'Create Job'}
+                {isLoading ? statusMsg || 'Processing...' : fundingMethod === 'hsp' ? 'Create Job & Pay via HSP' : 'Create Job & Fund with USDC'}
               </button>
             </div>
 
@@ -197,20 +253,37 @@ export default function CreateJob() {
                 <p className="text-green-800 font-medium">Job created and funded successfully!</p>
                 {createdJobId && (
                   <Link href={`/jobs/${createdJobId.toString()}`} className="block mt-2 text-green-600 hover:text-green-800 text-sm">
-                    View job #{createdJobId.toString()} →
+                    View job #{createdJobId.toString()} &rarr;
                   </Link>
                 )}
-                <a 
+                <a
                   href={`${hashkeyTestnet.blockExplorers?.default?.url}/tx/${txHash}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-green-600 hover:text-green-800 text-sm"
                 >
-                  View on Explorer →
+                  View on Explorer &rarr;
                 </a>
                 <Link href="/jobs" className="block mt-2 text-green-600 hover:text-green-800 text-sm">
-                  View all jobs →
+                  View all jobs &rarr;
                 </Link>
+              </div>
+            )}
+
+            {hspPaymentUrl && !txHash && (
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-blue-800 font-medium">HSP order created. Redirecting to checkout...</p>
+                {createdJobId && (
+                  <p className="text-blue-700 text-sm mt-1">Job #{createdJobId.toString()} will be funded once payment completes.</p>
+                )}
+                <a
+                  href={hspPaymentUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block mt-2 text-blue-600 hover:text-blue-800 text-sm underline"
+                >
+                  Open HSP checkout manually &rarr;
+                </a>
               </div>
             )}
           </form>
@@ -219,13 +292,13 @@ export default function CreateJob() {
         <div className="mt-6 p-4 bg-blue-50 rounded-lg">
           <h3 className="font-medium text-blue-900 mb-2">How it works:</h3>
           <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
-            <li>Create job and fund with USDC</li>
+            <li>Create job and fund with USDC (direct or via HSP)</li>
             <li>Agent accepts the job</li>
             <li>Agent submits work with deliverable</li>
             <li>You validate and release payment</li>
           </ol>
           <p className="mt-3 text-sm text-blue-700">
-            HSP funding is currently demonstrated through MockHSP on testnet while merchant approval is pending.
+            <strong>HSP Checkout</strong> routes payment through the HashKey Settlement Protocol for compliant on chain settlement.
           </p>
         </div>
       </main>

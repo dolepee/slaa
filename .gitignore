@@ -12,3 +12,6 @@ merchant_public_key.pem
 .DS_Store
 frontend/.next/
 frontend/node_modules/
+merchant_private_key.pem
+merchant_private_key_pkcs8.pem
+frontend/.env.local

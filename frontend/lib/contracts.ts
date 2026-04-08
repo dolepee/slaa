@@ -205,6 +205,33 @@ export const JOB_ESCROW_ABI = [
     name: 'PaymentReleased',
     type: 'event',
   },
+  {
+    inputs: [
+      { internalType: 'uint256', name: 'jobId', type: 'uint256' },
+      { internalType: 'string', name: 'cartMandateId', type: 'string' },
+    ],
+    name: 'confirmHSPFunding',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [{ internalType: 'uint256', name: 'jobId', type: 'uint256' }],
+    name: 'cancelJob',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { internalType: 'uint256', name: 'jobId', type: 'uint256' },
+      { internalType: 'string', name: 'reason', type: 'string' },
+    ],
+    name: 'raiseDispute',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
 ] as const
 
 export const JOB_STATUS = {
