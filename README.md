@@ -11,7 +11,7 @@ AI agents are becoming economically capable, but they lack the financial infrast
 
 ## Solution
 
-SLAA gives AI agents three things they need to participate in the economy: an ERC-721 identity NFT, a USDC escrow system for trustless payments, and an on chain reputation registry that tracks completed work. The architecture is designed to route payments through the HashKey Settlement Protocol (HSP) for compliant settlement. HSP merchant approval is pending, so a MockHSP contract simulates the Cart Mandate flow on testnet.
+SLAA gives AI agents three things they need to participate in the economy: an ERC-721 identity NFT, a USDC escrow system for trustless payments, and an on chain reputation registry that tracks completed work. The protocol now integrates the HashKey Settlement Protocol (HSP) Cart Mandate flow for compliant checkout and webhook-driven funding confirmation on testnet.
 
 ## How It Works
 
@@ -44,9 +44,9 @@ Smart Contracts (HashKey Chain Testnet)
     USDC Token (HashKey Chain)
 ```
 
-## HSP Integration (MockHSP Simulation)
+## HSP Integration
 
-The HashKey Settlement Protocol (HSP) provides compliant payment rails for on chain transactions. SLAA is architected to integrate HSP through the Cart Mandate flow. HSP merchant credentials have been applied for and are pending approval. A MockHSP contract is deployed on testnet to validate the funding architecture end to end. When credentials arrive, the MockHSP layer is intended to be replaced by the real HSP gateway with minimal or no protocol-level contract changes.
+The HashKey Settlement Protocol (HSP) provides compliant payment rails for on chain transactions. SLAA now integrates HSP through the Cart Mandate flow. The backend signs a merchant authorization JWT, creates the HSP order over the merchant API, and verifies the signed payment-successful webhook before calling `JobEscrow.confirmHSPFunding()` on chain.
 
 Production HSP flow:
 
@@ -58,7 +58,7 @@ Production HSP flow:
 6. HSP sends a webhook to `/api/hsp/webhook` with `payment-successful` status
 7. Backend verifies the webhook signature (HMAC-SHA256) and calls `JobEscrow.confirmHSPFunding()`
 
-A MockHSP contract is deployed on testnet to simulate this flow end to end while awaiting HSP merchant approval. The MockHSP contract follows the same architectural phases as the real HSP Cart Mandate flow: order creation, payer authorization, and settlement into the merchant contract (`JobEscrow`).
+`MockHSP` remains deployed on testnet as an earlier simulation harness and fallback reference, but the primary payment path used by the app is now the live HSP API + webhook flow.
 
 ## Deployed Contracts (HashKey Chain Testnet, Chain ID 133)
 
@@ -67,7 +67,7 @@ A MockHSP contract is deployed on testnet to simulate this flow end to end while
 | AgentRegistry      | 0x30a1E5d11EB7bED3a54Ae19a5C9D7EB8370b7948 | ERC-721 agent identity NFTs    |
 | ReputationRegistry | 0x1DbBa2cC54194Ca359Efe4eEDabe0722b966867F | On chain reputation scores     |
 | JobEscrow          | 0x3770bC9D78DefBdc8b8fB691ad99073Fe82aFc51 | USDC escrow for job payments   |
-| MockHSP            | 0x5A9BeC5eA455028eCf958693a2d661B95e779c1A | HSP Cart Mandate simulation    |
+| MockHSP            | 0x5A9BeC5eA455028eCf958693a2d661B95e779c1A | Legacy simulation harness      |
 | USDC (testnet)     | 0x8FE3cB719Ee4410E236Cd6b72ab1fCDC06eF53c6 | Payment token                  |
 
 ## Tech Stack
@@ -90,8 +90,8 @@ A MockHSP contract is deployed on testnet to simulate this flow end to end while
 
 ## API Routes
 
-- `POST /api/hsp/create-order` returns the MockHSP testnet funding payload used in the demo architecture
-- `POST /api/hsp/webhook` acknowledges the simulated HSP funding callback path
+- `POST /api/hsp/create-order` creates a signed HSP Cart Mandate order and returns the checkout URL
+- `POST /api/hsp/webhook` verifies the HSP signature and confirms funding on chain
 
 ## Quick Start
 

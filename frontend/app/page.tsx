@@ -130,7 +130,7 @@ export default function Home() {
           </h2>
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
             AI agents need PayFi infrastructure. SLAA provides on-chain identity, 
-            escrow with validation triggers, and HSP-ready payment rails on HashKey Chain.
+            escrow with validation triggers, and live HSP payment rails on HashKey Chain.
           </p>
           <div className="flex justify-center gap-4">
             <Link
@@ -246,7 +246,7 @@ export default function Home() {
             PayFi track • ERC-8004 Agent Identity • HSP Integration • KYC Gated
           </p>
           <p className="text-sm text-blue-100/90 mb-4">
-            Current testnet demo uses MockHSP to simulate the Cart Mandate funding flow while merchant approval is pending.
+            Live testnet demo supports both direct USDC escrow funding and HSP checkout with webhook-based funding confirmation.
           </p>
           <a
             href="https://dorahacks.io/hackathon/2045/detail"

@@ -1,15 +1,16 @@
 import { NextResponse } from 'next/server'
 import { createHash, createHmac, randomBytes } from 'crypto'
 import { SignJWT, importPKCS8 } from 'jose'
+import { CONTRACTS } from '../../../../lib/config'
 
-const HSP_BASE = 'https://merchant-qa.hashkeymerchant.com'
+const HSP_BASE = process.env.HSP_API_BASE || 'https://merchant-qa.hashkeymerchant.com'
 const HSP_APP_KEY = process.env.HSP_APP_KEY!
 const HSP_APP_SECRET = process.env.HSP_APP_SECRET!
 const HSP_MERCHANT_PRIVATE_KEY = (process.env.HSP_MERCHANT_PRIVATE_KEY || '').replace(/\\n/g, '\n')
-const MERCHANT_NAME = 'SLAA Protocol'
-
-const JOB_ESCROW = '0x3770bC9D78DefBdc8b8fB691ad99073Fe82aFc51'
-const USDC_ADDRESS = '0x8FE3cB719Ee4410E236Cd6b72ab1fCDC06eF53c6'
+const MERCHANT_NAME = process.env.HSP_MERCHANT_NAME || 'SLAA Protocol'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://slaa-protocol.vercel.app'
+const JOB_ESCROW = process.env.JOB_ESCROW_ADDRESS || CONTRACTS.jobEscrow
+const USDC_ADDRESS = process.env.HSP_USDC_ADDRESS || CONTRACTS.usdc
 
 function sortKeys(val: unknown): unknown {
   if (val === null || typeof val !== 'object') return val
@@ -33,6 +34,14 @@ function hmacSign(method: string, path: string, query: string, bodyHash: string,
 export async function POST(req: Request) {
   try {
     const { jobId, rewardUSDC } = await req.json()
+
+    if (!jobId || Number(jobId) <= 0) {
+      return NextResponse.json({ success: false, error: 'Invalid jobId' }, { status: 400 })
+    }
+
+    if (!rewardUSDC || Number(rewardUSDC) <= 0) {
+      return NextResponse.json({ success: false, error: 'Invalid reward amount' }, { status: 400 })
+    }
 
     if (!HSP_APP_KEY || !HSP_APP_SECRET || !HSP_MERCHANT_PRIVATE_KEY) {
       return NextResponse.json({ success: false, error: 'HSP credentials not configured' }, { status: 500 })
@@ -101,7 +110,7 @@ export async function POST(req: Request) {
         contents,
         merchant_authorization: jwt,
       },
-      redirect_url: `https://slaa-protocol.vercel.app/jobs/${jobId}`,
+      redirect_url: `${APP_URL.replace(/\/$/, '')}/jobs/${jobId}`,
     }
 
     // HMAC-SHA256 request signing

@@ -283,7 +283,7 @@ export default function JobDetail({ params }: { params: { id: string } }) {
         <div className="mt-6 pt-4 border-t border-gray-200">
           {job.fundedViaHSP && (
             <p className="mb-3 text-sm text-blue-700">
-              This job was funded through the MockHSP testnet simulation path.
+              This job was funded through the HSP checkout path.
             </p>
           )}
           <a
