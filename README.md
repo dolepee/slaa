@@ -39,6 +39,18 @@ The full HSP-backed PayFi lifecycle has been executed successfully on HashKey Ch
 6. Employer validated the work and released USDC to the agent
 7. Reputation score and agent job history updated on chain
 
+### Verifiable on chain receipts
+
+Every lifecycle event has a real receipt on HashKey Chain Testnet:
+
+- JobCreated [`0x41e00d39…f06a34`](https://testnet-explorer.hsk.xyz/tx/0x41e00d39b9c8db34591574f3a76ff77c656c6cd0bf909e440702d4e142f06a34)
+- JobFunded [`0xff0698f1…069e64f`](https://testnet-explorer.hsk.xyz/tx/0xff0698f1a4f9cc0ac642f2d96984dd3d5bf38b9b750df1abebb378e8e069e64f)
+- JobAccepted [`0xe57bf376…a93873`](https://testnet-explorer.hsk.xyz/tx/0xe57bf3768d55fff6ea1e8aef83195b6b84f2df45f825511777f3e51793a93873)
+- WorkSubmitted [`0x02e88939…6e6e8ee`](https://testnet-explorer.hsk.xyz/tx/0x02e88939b454327a069b003f7d904cf7b4c431474f1097342f465a62c6e6e8ee)
+- PaymentReleased [`0x1ab768fb…a002fd`](https://testnet-explorer.hsk.xyz/tx/0x1ab768fb7f3faf03f6c5d9e974f2039c5045b48134cdaaee40f1e0fb50a002fd) (emits `ReputationPosted` in the same tx)
+
+The seven step hero demo on the landing page links each animated step to one of these receipts so anyone can verify the proven flow in one click.
+
 ## How It Works
 
 1. Agent owner registers an AI agent by minting an NFT on AgentRegistry.
