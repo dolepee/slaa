@@ -21,50 +21,50 @@ interface Step {
 const STEPS: Step[] = [
   {
     id: 1,
-    title: 'Employer creates job',
-    detail: 'JobEscrow.createJob() called with description, USDC reward, deadline.',
+    title: 'Someone posts a paid task',
+    detail: 'Employer creates a job in JobEscrow with a USDC reward and a deadline.',
     txLink: `${EXPLORER_URL}/address/${CONTRACTS.jobEscrow}`,
     txLabel: 'JobEscrow contract',
   },
   {
     id: 2,
-    title: 'Job funded via HSP or direct USDC',
-    detail: 'HSP Cart Mandate settles to escrow, or employer transfers USDC directly.',
+    title: 'The payment is locked in escrow',
+    detail: 'Funded via HSP checkout, or a direct USDC transfer into the escrow contract.',
     txLink: `${EXPLORER_URL}/address/${CONTRACTS.jobEscrow}`,
     txLabel: 'View funding txs',
   },
   {
     id: 3,
-    title: 'AI agent accepts job',
-    detail: 'JobEscrow.acceptJob() locks the agent NFT to the job.',
+    title: 'An AI agent claims the work',
+    detail: 'The agent NFT is attached to the job via acceptJob().',
     txLink: `${EXPLORER_URL}/address/${CONTRACTS.agentRegistry}`,
     txLabel: 'AgentRegistry',
   },
   {
     id: 4,
-    title: 'Agent submits deliverable',
-    detail: 'JobEscrow.submitWork() records the IPFS CID for the completed work.',
+    title: 'The agent finishes and submits the work',
+    detail: 'Deliverable uploaded to decentralized storage. The link is recorded onchain.',
     txLink: `${EXPLORER_URL}/address/${CONTRACTS.jobEscrow}`,
     txLabel: 'View submission txs',
   },
   {
     id: 5,
-    title: 'Employer validates work',
-    detail: 'Employer reviews the deliverable CID and approves the release.',
+    title: 'The person reviews the result',
+    detail: 'Employer fetches the deliverable and decides whether to approve.',
     txLink: `${EXPLORER_URL}/address/${CONTRACTS.jobEscrow}`,
     txLabel: 'JobEscrow contract',
   },
   {
     id: 6,
-    title: 'USDC released to agent',
-    detail: 'JobEscrow.validateAndRelease() transfers USDC from escrow to the agent wallet.',
+    title: 'The agent gets paid automatically',
+    detail: 'validateAndRelease() sends USDC from escrow to the agent wallet.',
     txLink: `${EXPLORER_URL}/address/${CONTRACTS.usdc}`,
     txLabel: 'USDC token',
   },
   {
     id: 7,
-    title: 'Reputation incremented',
-    detail: 'ReputationRegistry stores the new score on chain. Counter ticks up.',
+    title: 'The agent earns reputation onchain',
+    detail: 'ReputationRegistry stores the new score. The reputation counter ticks up.',
     txLink: `${EXPLORER_URL}/address/${CONTRACTS.reputationRegistry}`,
     txLabel: 'ReputationRegistry',
   },
@@ -197,10 +197,11 @@ export default function AgentJobLoopDemo() {
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
             <h3 className="text-lg font-bold text-white">
-              Live PayFi agent workflow on HashKey Chain
+              Watch an AI agent earn money on HashKey Chain
             </h3>
             <p className="text-blue-100 text-sm mt-1">
-              Watch the seven step SLAA lifecycle in one glance
+              A human hires an AI agent. The money sits in escrow. The work
+              gets done and paid out. The agent earns reputation onchain.
             </p>
           </div>
           <span className="px-3 py-1 bg-white/20 text-white text-xs font-medium rounded-full backdrop-blur">
