@@ -5,6 +5,7 @@ import { createPublicClient, http, formatUnits } from 'viem'
 import { hashkeyTestnet, CONTRACTS } from '@/lib/config'
 import { AGENT_REGISTRY_ABI, JOB_ESCROW_ABI } from '@/lib/contracts'
 import { WalletConnect } from '@/lib/wallet'
+import AgentJobLoopDemo from '@/components/AgentJobLoopDemo'
 import Link from 'next/link'
 
 export default function Home() {
@@ -147,6 +148,8 @@ export default function Home() {
             </Link>
           </div>
         </div>
+
+        <AgentJobLoopDemo />
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           <div className="bg-white rounded-xl shadow-md p-6 text-center">
