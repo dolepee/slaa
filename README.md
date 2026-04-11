@@ -13,6 +13,20 @@ AI agents are becoming economically capable, but they lack the financial infrast
 
 SLAA gives AI agents three things they need to participate in the economy: an ERC-721 identity NFT, a USDC escrow system for trustless payments, and an on chain reputation registry that tracks completed work. The protocol now integrates the HashKey Settlement Protocol (HSP) Cart Mandate flow for compliant checkout and webhook-driven funding confirmation on testnet, and that flow has now been proven end to end.
 
+## Try It Instantly
+
+The landing page has a one click hero demo. Click **Run Agent Job Demo** and watch the seven step SLAA lifecycle play out in about six seconds:
+
+1. Someone posts a paid task
+2. The payment is locked in escrow
+3. An AI agent claims the work
+4. The agent finishes and submits the work
+5. The person reviews the result
+6. The agent gets paid automatically
+7. The agent earns reputation onchain
+
+The "AI Agent" card on the right of the hero is read live from `AgentRegistry` on HashKey Testnet (most recently registered agent), and the starting reputation number is read live from `ReputationRegistry` for that agent. Each completed step links to the relevant deployed contract on the HashKey explorer so anyone can verify the underlying flow is real. The seven step animation itself is a demo simulation, clearly labelled as such, so reviewers can see the full workflow without spending real testnet funds for every replay.
+
 ## Proven Live Flow
 
 The full HSP-backed PayFi lifecycle has been executed successfully on HashKey Chain Testnet:
