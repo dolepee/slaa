@@ -16,57 +16,68 @@ interface Step {
   detail: string
   txLink?: string
   txLabel?: string
+  offchain?: boolean
 }
+
+// Real on-chain transaction hashes from the proven SLAA lifecycle on
+// HashKey Chain Testnet. Each step links to a verifiable receipt so judges
+// can confirm the entire flow actually executed end to end.
+const PROVEN_TX = {
+  jobCreated: '0x41e00d39b9c8db34591574f3a76ff77c656c6cd0bf909e440702d4e142f06a34',
+  jobFunded: '0xff0698f1a4f9cc0ac642f2d96984dd3d5bf38b9b750df1abebb378e8e069e64f',
+  jobAccepted: '0xe57bf3768d55fff6ea1e8aef83195b6b84f2df45f825511777f3e51793a93873',
+  workSubmitted: '0x02e88939b454327a069b003f7d904cf7b4c431474f1097342f465a62c6e6e8ee',
+  paymentReleased: '0x1ab768fb7f3faf03f6c5d9e974f2039c5045b48134cdaaee40f1e0fb50a002fd',
+} as const
 
 const STEPS: Step[] = [
   {
     id: 1,
     title: 'Someone posts a paid task',
     detail: 'Employer creates a job in JobEscrow with a USDC reward and a deadline.',
-    txLink: `${EXPLORER_URL}/address/${CONTRACTS.jobEscrow}`,
-    txLabel: 'JobEscrow contract',
+    txLink: `${EXPLORER_URL}/tx/${PROVEN_TX.jobCreated}`,
+    txLabel: 'View JobCreated tx',
   },
   {
     id: 2,
     title: 'The payment is locked in escrow',
     detail: 'Funded via HSP checkout, or a direct USDC transfer into the escrow contract.',
-    txLink: `${EXPLORER_URL}/address/${CONTRACTS.jobEscrow}`,
-    txLabel: 'View funding txs',
+    txLink: `${EXPLORER_URL}/tx/${PROVEN_TX.jobFunded}`,
+    txLabel: 'View JobFunded tx',
   },
   {
     id: 3,
     title: 'An AI agent claims the work',
     detail: 'The agent NFT is attached to the job via acceptJob().',
-    txLink: `${EXPLORER_URL}/address/${CONTRACTS.agentRegistry}`,
-    txLabel: 'AgentRegistry',
+    txLink: `${EXPLORER_URL}/tx/${PROVEN_TX.jobAccepted}`,
+    txLabel: 'View JobAccepted tx',
   },
   {
     id: 4,
     title: 'The agent finishes and submits the work',
-    detail: 'Deliverable uploaded to decentralized storage. The link is recorded onchain.',
-    txLink: `${EXPLORER_URL}/address/${CONTRACTS.jobEscrow}`,
-    txLabel: 'View submission txs',
+    detail: 'Deliverable uploaded to decentralized storage. The CID is recorded onchain.',
+    txLink: `${EXPLORER_URL}/tx/${PROVEN_TX.workSubmitted}`,
+    txLabel: 'View WorkSubmitted tx',
   },
   {
     id: 5,
     title: 'The person reviews the result',
-    detail: 'Employer fetches the deliverable and decides whether to approve.',
-    txLink: `${EXPLORER_URL}/address/${CONTRACTS.jobEscrow}`,
-    txLabel: 'JobEscrow contract',
+    detail: 'Employer fetches the deliverable and decides whether to approve. This step happens off chain.',
+    offchain: true,
   },
   {
     id: 6,
     title: 'The agent gets paid automatically',
     detail: 'validateAndRelease() sends USDC from escrow to the agent wallet.',
-    txLink: `${EXPLORER_URL}/address/${CONTRACTS.usdc}`,
-    txLabel: 'USDC token',
+    txLink: `${EXPLORER_URL}/tx/${PROVEN_TX.paymentReleased}`,
+    txLabel: 'View PaymentReleased tx',
   },
   {
     id: 7,
     title: 'The agent earns reputation onchain',
     detail: 'ReputationRegistry stores the new score. The reputation counter ticks up.',
     txLink: `${EXPLORER_URL}/address/${CONTRACTS.reputationRegistry}`,
-    txLabel: 'ReputationRegistry',
+    txLabel: 'View ReputationRegistry',
   },
 ]
 
@@ -302,6 +313,11 @@ export default function AgentJobLoopDemo() {
                     >
                       🔗 {step.txLabel}
                     </a>
+                  )}
+                  {step.offchain && isComplete && (
+                    <span className="inline-block mt-1 text-xs text-gray-500 italic">
+                      Off chain step, no transaction
+                    </span>
                   )}
                 </div>
               </div>
