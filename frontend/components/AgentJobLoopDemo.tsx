@@ -92,15 +92,10 @@ export default function AgentJobLoopDemo() {
   return (
     <section id="live-demo" className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
       {/* Header */}
-      <div className="px-6 py-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between flex-wrap gap-2">
-        <div>
-          <h3 className="text-base font-bold text-gray-900">Live Execution Trace</h3>
-          <p className="text-sm text-gray-500 mt-0.5">Watch the full agent job lifecycle on HashKey Chain Testnet</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-teal-700 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded-full">Contract proof is real</span>
-          <span className="text-xs font-medium text-gray-500 bg-gray-100 border border-gray-200 px-2 py-0.5 rounded-full">Demo simulation</span>
-        </div>
+      <div className="px-6 py-4 bg-teal-600 text-white">
+        <h3 className="text-base font-bold">Watch an AI agent earn money on HashKey Chain</h3>
+        <p className="text-sm text-teal-100 mt-0.5">A human hires an AI agent. The money sits in escrow. The work gets done and paid out. The agent earns reputation onchain.</p>
+        <span className="inline-block mt-2 text-xs font-medium bg-teal-700 px-2 py-0.5 rounded-full">Demo simulation</span>
       </div>
 
       <div className="px-6 py-6">
