@@ -14,9 +14,7 @@ export function WalletConnect() {
   const [chainId, setChainId] = useState<number | null>(null)
   const [isConnecting, setIsConnecting] = useState(false)
 
-  useEffect(() => {
-    checkConnection()
-  }, [])
+  useEffect(() => { checkConnection() }, [])
 
   const checkConnection = async () => {
     if (typeof window !== 'undefined' && window.ethereum) {
@@ -30,45 +28,28 @@ export function WalletConnect() {
   }
 
   const connect = async () => {
-    if (!window.ethereum) {
-      alert('Please install MetaMask to use this dApp')
-      return
-    }
+    if (!window.ethereum) { alert('Please install MetaMask to use this dApp'); return }
     setIsConnecting(true)
     try {
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' })
       setAddress(accounts[0])
       const chainId = await window.ethereum.request({ method: 'eth_chainId' })
       setChainId(parseInt(chainId, 16))
-    } catch (err) {
-      console.error('Failed to connect:', err)
-    }
+    } catch (err) { console.error('Failed to connect:', err) }
     setIsConnecting(false)
   }
 
-  const disconnect = () => {
-    setAddress(null)
-    setChainId(null)
-  }
+  const disconnect = () => { setAddress(null); setChainId(null) }
 
   const switchToHashKey = async () => {
     if (!window.ethereum) return
     try {
-      await window.ethereum.request({
-        method: 'wallet_switchEthereumChain',
-        params: [{ chainId: '0x85' }],
-      })
+      await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: '0x85' }] })
     } catch (err: any) {
       if (err.code === 4902) {
         await window.ethereum.request({
           method: 'wallet_addEthereumChain',
-          params: [{
-            chainId: '0x85',
-            chainName: 'HashKey Chain Testnet',
-            nativeCurrency: { name: 'HSK', symbol: 'HSK', decimals: 18 },
-            rpcUrls: ['https://testnet.hsk.xyz'],
-            blockExplorerUrls: ['https://testnet-explorer.hsk.xyz'],
-          }],
+          params: [{ chainId: '0x85', chainName: 'HashKey Chain Testnet', nativeCurrency: { name: 'HSK', symbol: 'HSK', decimals: 18 }, rpcUrls: ['https://testnet.hsk.xyz'], blockExplorerUrls: ['https://testnet-explorer.hsk.xyz'] }],
         })
       }
     }
@@ -79,13 +60,9 @@ export function WalletConnect() {
   if (address && chainId === 133) {
     return (
       <div className="flex items-center gap-2">
-        <span className="text-xs font-mono text-gray-400 bg-white/[0.04] border border-white/[0.06] px-2.5 py-1 rounded-md">
-          {address.slice(0, 6)}...{address.slice(-4)}
-        </span>
-        <span className="text-[10px] text-emerald-400 font-medium">Connected</span>
-        <button onClick={disconnect} className="text-xs text-gray-600 hover:text-gray-400 transition-colors">
-          ×
-        </button>
+        <span className="text-xs font-mono text-gray-600 bg-gray-100 px-2.5 py-1 rounded-md">{address.slice(0, 6)}...{address.slice(-4)}</span>
+        <span className="text-xs text-green-600 font-medium">Connected</span>
+        <button onClick={disconnect} className="text-xs text-gray-400 hover:text-gray-600">Disconnect</button>
       </div>
     )
   }
@@ -93,26 +70,15 @@ export function WalletConnect() {
   if (address && chainId !== 133) {
     return (
       <div className="flex items-center gap-2">
-        <span className="text-xs font-mono text-gray-400">
-          {address.slice(0, 6)}...{address.slice(-4)}
-        </span>
-        <button
-          onClick={switchToHashKey}
-          className="text-xs bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-1 rounded-md hover:bg-amber-500/30 transition-colors"
-        >
-          Switch Network
-        </button>
-        <button onClick={disconnect} className="text-xs text-gray-600 hover:text-gray-400">×</button>
+        <span className="text-xs font-mono text-gray-600">{address.slice(0, 6)}...{address.slice(-4)}</span>
+        <button onClick={switchToHashKey} className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-md hover:bg-orange-200">Switch Network</button>
+        <button onClick={disconnect} className="text-xs text-gray-400 hover:text-gray-600">Disconnect</button>
       </div>
     )
   }
 
   return (
-    <button
-      onClick={connect}
-      disabled={isConnecting}
-      className="btn-primary text-xs !py-1.5 !px-3"
-    >
+    <button onClick={connect} disabled={isConnecting} className="px-3 py-1.5 bg-teal-600 text-white rounded-lg text-xs font-medium hover:bg-teal-700 disabled:bg-gray-300 transition-colors">
       {isConnecting ? 'Connecting...' : 'Connect Wallet'}
     </button>
   )

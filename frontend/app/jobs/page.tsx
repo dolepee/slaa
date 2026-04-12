@@ -16,30 +16,16 @@ export default function Jobs() {
   const loadJobs = async () => {
     try {
       const publicClient = createPublicClient({ chain: hashkeyTestnet, transport: http() })
-      const count = await publicClient.readContract({
-        address: CONTRACTS.jobEscrow as `0x${string}`,
-        abi: JOB_ESCROW_ABI,
-        functionName: 'totalJobs',
-      }) as bigint
-
+      const count = await publicClient.readContract({ address: CONTRACTS.jobEscrow as `0x${string}`, abi: JOB_ESCROW_ABI, functionName: 'totalJobs' }) as bigint
       const details = []
       for (let i = 1; i <= Number(count); i++) {
         try {
-          const job = await publicClient.readContract({
-            address: CONTRACTS.jobEscrow as `0x${string}`,
-            abi: JOB_ESCROW_ABI,
-            functionName: 'getJob',
-            args: [BigInt(i)],
-          }) as any
+          const job = await publicClient.readContract({ address: CONTRACTS.jobEscrow as `0x${string}`, abi: JOB_ESCROW_ABI, functionName: 'getJob', args: [BigInt(i)] }) as any
           details.push({ jobId: i, employer: job.employer || job[0], reward: job.reward || job[2], description: job.description || job[3], status: job.status ?? job[5] })
-        } catch {
-          details.push({ jobId: i, employer: '', reward: BigInt(0), description: `Job #${i}`, status: 0 })
-        }
+        } catch { details.push({ jobId: i, employer: '', reward: BigInt(0), description: `Job #${i}`, status: 0 }) }
       }
       setJobDetails(details)
-    } catch (err) {
-      console.error('Failed to load jobs:', err)
-    }
+    } catch (err) { console.error('Failed to load jobs:', err) }
     setLoading(false)
   }
 
@@ -48,37 +34,29 @@ export default function Jobs() {
       <SiteNav current="jobs" />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-xl font-bold text-white">Job Board</h1>
-          <span className="text-xs text-gray-600 font-mono">{jobDetails.length} posted</span>
+          <h1 className="text-xl font-bold text-gray-900">Job Board</h1>
+          <span className="text-xs text-gray-500 font-mono">{jobDetails.length} posted</span>
         </div>
-
         {loading ? (
-          <div className="card p-8 text-center"><div className="skeleton h-4 w-32 mx-auto" /></div>
+          <div className="bg-white rounded-xl border border-gray-200 p-8 shadow-sm text-center"><div className="skeleton h-4 w-32 mx-auto" /></div>
         ) : jobDetails.length === 0 ? (
-          <div className="card p-8 text-center">
-            <p className="text-sm text-gray-500 mb-3">No jobs posted yet.</p>
-            <Link href="/jobs/create" className="text-sm text-teal-400 hover:text-teal-300">Be the first to post a job</Link>
+          <div className="bg-white rounded-xl border border-gray-200 p-8 shadow-sm text-center">
+            <p className="text-sm text-gray-400 mb-3">No jobs posted yet.</p>
+            <Link href="/jobs/create" className="text-sm text-teal-600 hover:text-teal-800">Be the first to post a job</Link>
           </div>
         ) : (
-          <div className="grid gap-2">
+          <div className="grid gap-3">
             {jobDetails.map((job) => (
               <Link key={job.jobId} href={`/jobs/${job.jobId}`}>
-                <div className="card card-hover p-4 transition-all">
+                <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm hover:border-gray-300 transition-colors">
                   <div className="flex justify-between items-start">
                     <div>
-                      <div className="text-sm font-medium text-gray-200">{job.description || `Job #${job.jobId}`}</div>
-                      <div className="text-xs text-gray-500 mt-0.5 font-mono">
-                        {formatUnits(job.reward || BigInt(0), 6)} USDC
-                      </div>
-                      <div className="text-[11px] text-gray-600 mt-0.5 font-mono">
-                        {job.employer ? `${job.employer.slice(0, 6)}...${job.employer.slice(-4)}` : 'Unknown'}
-                      </div>
+                      <div className="text-sm font-medium text-gray-900">{job.description || `Job #${job.jobId}`}</div>
+                      <div className="text-xs text-gray-500 mt-0.5 font-mono">{formatUnits(job.reward || BigInt(0), 6)} USDC</div>
+                      <div className="text-xs text-gray-400 mt-0.5 font-mono">{job.employer ? `${job.employer.slice(0, 6)}...${job.employer.slice(-4)}` : 'Unknown'}</div>
                     </div>
-                    <span className={`status-pill ${
-                      Number(job.status) === 4 ? 'bg-emerald-500/10 text-emerald-400' :
-                      Number(job.status) >= 1 ? 'bg-teal-500/10 text-teal-400' :
-                      Number(job.status) === 0 ? 'bg-amber-500/10 text-amber-400' :
-                      'bg-white/[0.04] text-gray-500'
+                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                      Number(job.status) === 4 ? 'bg-green-100 text-green-700' : Number(job.status) >= 1 ? 'bg-teal-100 text-teal-700' : 'bg-yellow-100 text-yellow-700'
                     }`}>
                       {['Created','Funded','Accepted','Submitted','Released','Disputed','Cancelled'][Number(job.status)] || 'Unknown'}
                     </span>

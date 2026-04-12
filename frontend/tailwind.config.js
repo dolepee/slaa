@@ -5,12 +5,7 @@ module.exports = {
     './components/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
-    extend: {
-      colors: {
-        surface: '#0f0f0f',
-        'surface-hover': '#161616',
-      },
-    },
+    extend: {},
   },
   plugins: [],
 }
