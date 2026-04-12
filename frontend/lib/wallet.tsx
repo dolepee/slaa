@@ -60,9 +60,14 @@ export function WalletConnect() {
   if (address && chainId === 133) {
     return (
       <div className="flex items-center gap-2">
-        <span className="text-xs font-mono text-gray-600 bg-gray-100 px-2.5 py-1 rounded-md">{address.slice(0, 6)}...{address.slice(-4)}</span>
-        <span className="text-xs text-green-600 font-medium">Connected</span>
-        <button onClick={disconnect} className="text-xs text-gray-400 hover:text-gray-600">Disconnect</button>
+        <span className="text-xs font-mono text-gray-300 bg-white/[0.06] border border-white/10 px-2.5 py-1 rounded-lg">
+          {address.slice(0, 6)}...{address.slice(-4)}
+        </span>
+        <span className="flex items-center gap-1 text-xs text-emerald-400 font-medium">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+          Live
+        </span>
+        <button onClick={disconnect} className="text-xs text-gray-500 hover:text-gray-300 transition-colors">Disconnect</button>
       </div>
     )
   }
@@ -70,15 +75,21 @@ export function WalletConnect() {
   if (address && chainId !== 133) {
     return (
       <div className="flex items-center gap-2">
-        <span className="text-xs font-mono text-gray-600">{address.slice(0, 6)}...{address.slice(-4)}</span>
-        <button onClick={switchToHashKey} className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-md hover:bg-orange-200">Switch Network</button>
-        <button onClick={disconnect} className="text-xs text-gray-400 hover:text-gray-600">Disconnect</button>
+        <span className="text-xs font-mono text-gray-400">{address.slice(0, 6)}...{address.slice(-4)}</span>
+        <button onClick={switchToHashKey} className="text-xs bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2.5 py-1 rounded-lg hover:bg-amber-500/30 transition-colors">
+          Switch Network
+        </button>
+        <button onClick={disconnect} className="text-xs text-gray-500 hover:text-gray-300 transition-colors">Disconnect</button>
       </div>
     )
   }
 
   return (
-    <button onClick={connect} disabled={isConnecting} className="px-3 py-1.5 bg-teal-600 text-white rounded-lg text-xs font-medium hover:bg-teal-700 disabled:bg-gray-300 transition-colors">
+    <button
+      onClick={connect}
+      disabled={isConnecting}
+      className="relative px-4 py-1.5 rounded-lg text-xs font-semibold text-white transition-all disabled:opacity-40 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/30"
+    >
       {isConnecting ? 'Connecting...' : 'Connect Wallet'}
     </button>
   )

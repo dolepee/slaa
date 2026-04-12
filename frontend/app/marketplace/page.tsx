@@ -6,6 +6,7 @@ import { hashkeyTestnet, CONTRACTS, EXPLORER_URL } from '@/lib/config'
 import SiteNav from '@/components/SiteNav'
 import Link from 'next/link'
 import { AGENT_REGISTRY_ABI } from '@/lib/contracts'
+import { ExternalLink } from 'lucide-react'
 
 export default function Marketplace() {
   const [agentProfiles, setAgentProfiles] = useState<any[]>([])
@@ -34,30 +35,38 @@ export default function Marketplace() {
       <SiteNav current="agents" />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-xl font-bold text-gray-900">Agent Marketplace</h1>
+          <h1 className="text-xl font-bold text-white">Agent Marketplace</h1>
           <span className="text-xs text-gray-500 font-mono">{agentProfiles.length} registered</span>
         </div>
         {loading ? (
-          <div className="bg-white rounded-xl border border-gray-200 p-8 shadow-sm text-center"><div className="skeleton h-4 w-32 mx-auto" /></div>
+          <div className="glass-card !rounded-xl p-8 text-center"><div className="skeleton h-4 w-32 mx-auto" /></div>
         ) : agentProfiles.length === 0 ? (
-          <div className="bg-white rounded-xl border border-gray-200 p-8 shadow-sm text-center">
-            <p className="text-sm text-gray-400 mb-3">No agents registered yet.</p>
-            <Link href="/agents/register" className="text-sm text-teal-600 hover:text-teal-800">Be the first to register</Link>
+          <div className="glass-card !rounded-xl p-8 text-center">
+            <p className="text-sm text-gray-500 mb-3">No agents registered yet.</p>
+            <Link href="/agents/register" className="text-sm text-cyan-400 hover:text-cyan-300 transition-colors">Be the first to register</Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {agentProfiles.map((agent) => (
-              <div key={agent.tokenId} className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm hover:border-gray-300 transition-colors">
+              <div key={agent.tokenId} className="glass-card !rounded-xl p-5 group">
                 <div className="flex items-start justify-between">
-                  <div>
-                    <div className="text-sm font-semibold text-gray-900">{agent.name}</div>
-                    <div className="text-xs text-gray-500 mt-0.5">{agent.capabilities}</div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-white/10 flex items-center justify-center">
+                      <span className="text-sm font-bold text-cyan-400">{(agent.name || 'A')[0]}</span>
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-white">{agent.name}</div>
+                      <div className="text-xs text-gray-500 mt-0.5">{agent.capabilities}</div>
+                    </div>
                   </div>
-                  <span className="text-xs font-mono text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded">#{agent.tokenId}</span>
+                  <span className="text-xs font-mono text-cyan-400/60">#{agent.tokenId}</span>
                 </div>
-                <div className="mt-3 pt-3 border-t border-gray-100 flex justify-between items-center">
-                  <span className="text-xs text-gray-400 font-mono">{Number(agent.completedJobs)}/{Number(agent.totalJobs)} completed</span>
-                  <a href={`${EXPLORER_URL}/address/${agent.wallet}`} target="_blank" rel="noopener noreferrer" className="text-xs text-teal-600 hover:text-teal-800 hover:underline">Wallet</a>
+                <div className="mt-3 pt-3 border-t border-white/[0.06] flex justify-between items-center">
+                  <span className="text-xs text-gray-500 font-mono">{Number(agent.completedJobs)}/{Number(agent.totalJobs)} completed</span>
+                  <a href={`${EXPLORER_URL}/address/${agent.wallet}`} target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs text-cyan-400 hover:text-cyan-300 transition-colors">
+                    Wallet <ExternalLink className="w-3 h-3" />
+                  </a>
                 </div>
               </div>
             ))}

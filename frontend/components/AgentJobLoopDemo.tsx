@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { createPublicClient, http } from 'viem'
 import { hashkeyTestnet, CONTRACTS, EXPLORER_URL } from '@/lib/config'
 import { AGENT_REGISTRY_ABI, REPUTATION_REGISTRY_ABI } from '@/lib/contracts'
+import { ExternalLink, CheckCircle2, Circle, Loader2, ArrowRight, Shield, Zap, Award } from 'lucide-react'
 
 type StepState = 'pending' | 'active' | 'complete'
 
@@ -89,101 +90,178 @@ export default function AgentJobLoopDemo() {
     setRunning(false)
   }
 
+  const completedCount = stepStates.filter(s => s === 'complete').length
+
   return (
-    <section id="live-demo" className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+    <section id="live-demo" className="glass-card overflow-hidden">
       {/* Header */}
-      <div className="px-6 py-4 bg-teal-600 text-white">
-        <h3 className="text-base font-bold">Watch an AI agent earn money on HashKey Chain</h3>
-        <p className="text-sm text-teal-100 mt-0.5">A human hires an AI agent. The money sits in escrow. The work gets done and paid out. The agent earns reputation onchain.</p>
-        <span className="inline-block mt-2 text-xs font-medium bg-teal-700 px-2 py-0.5 rounded-full">Demo simulation</span>
+      <div className="px-6 py-5 border-b border-white/[0.06] bg-gradient-to-r from-cyan-500/[0.08] to-blue-600/[0.08]">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <h3 className="text-lg font-bold text-white">Watch an AI agent earn money on HashKey Chain</h3>
+            <p className="text-sm text-gray-400 mt-1">A human hires an AI agent. The money sits in escrow. The work gets done and paid out. The agent earns reputation onchain.</p>
+          </div>
+          <span className="text-xs font-medium text-cyan-300 bg-cyan-500/10 border border-cyan-500/20 px-2.5 py-1 rounded-full">
+            Demo simulation
+          </span>
+        </div>
       </div>
 
       <div className="px-6 py-6">
-        {/* Actors */}
-        <div className="flex items-center justify-between gap-3 mb-6">
-          <div className="flex-1 bg-gray-50 rounded-xl p-4 border border-gray-200">
-            <div className="text-xs text-gray-400 uppercase tracking-wide mb-1">Employer</div>
-            <div className="font-semibold text-gray-900 text-sm">Human or dApp</div>
-            <div className="text-xs text-gray-400 mt-1 font-mono">0xEmp...loyer</div>
+        {/* Actor Flow */}
+        <div className="flex items-center justify-center gap-3 sm:gap-4 mb-6">
+          <div className="glass-card !rounded-xl px-4 py-3 text-center min-w-[100px]">
+            <Shield className="w-5 h-5 text-cyan-400 mx-auto mb-1" />
+            <div className="text-xs font-semibold text-white">Employer</div>
+            <div className="text-[10px] text-gray-500 font-mono mt-0.5">Human / dApp</div>
           </div>
-          <div className="flex-shrink-0 text-gray-300 text-xl">&rarr;</div>
-          <div className="flex-1 bg-gray-50 rounded-xl p-4 border border-gray-200">
-            <div className="text-xs text-gray-400 uppercase tracking-wide mb-1">AI Agent</div>
-            <div className="font-semibold text-gray-900 text-sm">{agent.name} <span className="text-xs text-gray-400 font-normal">#{agent.tokenId}</span></div>
-            <div className="text-xs text-gray-400 mt-1 font-mono">{shorten(agent.wallet)}</div>
+          <ArrowRight className="w-4 h-4 text-gray-600 flex-shrink-0" />
+          <div className="glass-card !rounded-xl px-4 py-3 text-center min-w-[100px] border-cyan-500/20">
+            <Zap className="w-5 h-5 text-blue-400 mx-auto mb-1" />
+            <div className="text-xs font-semibold text-white">Escrow</div>
+            <div className="text-[10px] text-gray-500 font-mono mt-0.5">USDC locked</div>
+          </div>
+          <ArrowRight className="w-4 h-4 text-gray-600 flex-shrink-0" />
+          <div className="glass-card !rounded-xl px-4 py-3 text-center min-w-[100px]">
+            <Award className="w-5 h-5 text-purple-400 mx-auto mb-1" />
+            <div className="text-xs font-semibold text-white">{agent.name}</div>
+            <div className="text-[10px] text-gray-500 font-mono mt-0.5">#{agent.tokenId} &middot; {shorten(agent.wallet)}</div>
           </div>
         </div>
 
         {/* Run button */}
         <div className="text-center mb-6">
-          <button onClick={runDemo} disabled={running} className="px-8 py-2.5 bg-teal-600 text-white rounded-lg font-semibold text-sm hover:bg-teal-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors shadow-sm">
+          <button
+            onClick={runDemo}
+            disabled={running}
+            className="px-8 py-2.5 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/30"
+          >
             {running ? 'Executing...' : hasRun ? 'Replay Trace' : 'Run Agent Job Demo'}
           </button>
         </div>
 
-        {/* Steps */}
-        <div className="space-y-2 mb-6">
-          {STEPS.map((step, idx) => {
-            const state = stepStates[idx]
-            const isActive = state === 'active'
-            const isComplete = state === 'complete'
-            return (
-              <div key={step.id} className={`flex items-start gap-3 p-3 rounded-lg border transition-all ${
-                isComplete ? 'bg-green-50 border-green-200' : isActive ? 'bg-teal-50 border-teal-300 shadow-sm' : 'bg-gray-50 border-gray-100 opacity-50'
-              }`}>
-                <div className={`mt-0.5 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
-                  isComplete ? 'bg-green-500 text-white' : isActive ? 'bg-teal-500 text-white animate-pulse' : 'bg-gray-200 text-gray-500'
-                }`}>
-                  {isComplete ? '✓' : step.id}
+        {/* Main content: Stepper + Data Panel */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Stepper */}
+          <div className="lg:col-span-2">
+            <div className="relative">
+              {/* Vertical connector line */}
+              <div className="absolute left-[11px] top-3 bottom-3 w-px bg-white/[0.06]" />
+              {/* Progress fill */}
+              <div
+                className="absolute left-[11px] top-3 w-px bg-gradient-to-b from-cyan-400 to-blue-500 transition-all duration-300"
+                style={{ height: `${(completedCount / STEPS.length) * 100}%` }}
+              />
+
+              <div className="space-y-1">
+                {STEPS.map((step, idx) => {
+                  const state = stepStates[idx]
+                  const isActive = state === 'active'
+                  const isComplete = state === 'complete'
+                  return (
+                    <div key={step.id} className={`relative flex items-start gap-3 p-3 rounded-xl transition-all duration-200 ${
+                      isActive ? 'bg-cyan-500/[0.06] border border-cyan-500/20' : isComplete ? 'bg-white/[0.02]' : 'opacity-50'
+                    } ${!isActive ? 'border border-transparent' : ''}`}>
+                      {/* Step indicator */}
+                      <div className="relative z-10 flex-shrink-0">
+                        {isComplete ? (
+                          <CheckCircle2 className="w-6 h-6 text-emerald-400" />
+                        ) : isActive ? (
+                          <div className="w-6 h-6 rounded-full bg-cyan-500 flex items-center justify-center glow-active">
+                            <Loader2 className="w-3 h-3 text-white animate-spin" />
+                          </div>
+                        ) : (
+                          <Circle className="w-6 h-6 text-gray-600" />
+                        )}
+                      </div>
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className={`text-sm font-medium ${isComplete || isActive ? 'text-white' : 'text-gray-500'}`}>
+                            {step.title}
+                          </span>
+                          {(isComplete || isActive) && (
+                            <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full ${
+                              isComplete ? 'bg-emerald-500/10 text-emerald-400' : 'bg-cyan-500/10 text-cyan-400'
+                            }`}>
+                              {isComplete ? 'complete' : 'active'}
+                            </span>
+                          )}
+                        </div>
+                        <p className={`text-xs mt-0.5 ${isComplete || isActive ? 'text-gray-400' : 'text-gray-600'}`}>
+                          {step.detail}
+                        </p>
+                        {step.txLink && isComplete && (
+                          <a href={step.txLink} target="_blank" rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 mt-1 text-xs font-mono text-cyan-400 hover:text-cyan-300 transition-colors">
+                            <CheckCircle2 className="w-3 h-3" /> {step.txLabel}
+                            <span className="text-gray-600">{step.txLink.includes('/tx/') ? `${step.txLink.split('/tx/')[1].slice(0, 10)}...` : ''}</span>
+                            <ExternalLink className="w-3 h-3" />
+                          </a>
+                        )}
+                        {step.offchain && isComplete && (
+                          <span className="inline-block mt-1 text-xs text-gray-500 italic">Off chain step, no transaction</span>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Data Panel */}
+          <div className="space-y-3">
+            {/* Agent Reputation */}
+            <div className="bg-white/[0.03] border border-white/[0.08] rounded-xl p-4">
+              <div className="text-[10px] text-gray-500 uppercase tracking-widest font-mono mb-2">Agent Reputation</div>
+              <div className="flex items-baseline gap-2 mb-3">
+                <span className="text-3xl font-bold text-white font-mono">{reputationDisplay}</span>
+                <span className="text-sm text-gray-500 font-mono">/100</span>
+                {hasRun && reputationDisplay > agent.reputation && (
+                  <span className="text-sm text-emerald-400 font-semibold">+1</span>
+                )}
+              </div>
+              <div className="h-2 bg-white/[0.06] rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full transition-all duration-700 ease-out"
+                  style={{ width: `${reputationDisplay}%` }}
+                />
+              </div>
+              <p className="text-[10px] text-gray-500 mt-2">Read live from ReputationRegistry. Tick is a demo visualisation.</p>
+            </div>
+
+            {/* Proven Flow Data */}
+            <div className="bg-black/30 border border-white/[0.08] rounded-xl p-4">
+              <div className="text-[10px] text-gray-500 uppercase tracking-widest font-mono mb-3">Proven Flow Data</div>
+              <div className="space-y-2.5 text-sm">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400">Status</span>
+                  <span className="font-mono text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded text-xs">Released</span>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <div className="font-medium text-gray-900 text-sm">{step.title}</div>
-                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                      isComplete ? 'bg-green-100 text-green-700' : isActive ? 'bg-teal-100 text-teal-700' : 'bg-gray-100 text-gray-400'
-                    }`}>{state}</span>
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1">{step.detail}</div>
-                  {step.txLink && isComplete && (
-                    <a href={step.txLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 mt-1.5 text-xs font-mono text-teal-600 hover:text-teal-800 hover:underline">
-                      &#10003; {step.txLabel} <span className="text-gray-400">{step.txLink.includes('/tx/') ? `${step.txLink.split('/tx/')[1].slice(0, 10)}...` : ''}</span>
-                    </a>
-                  )}
-                  {step.offchain && isComplete && (
-                    <span className="inline-block mt-1.5 text-xs text-gray-400 italic">Off chain step, no transaction</span>
-                  )}
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400">fundedViaHSP</span>
+                  <span className="font-mono text-cyan-400 text-xs">true</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400">Reward</span>
+                  <span className="font-mono text-white font-medium text-xs">10.0 USDC</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400">Reputation</span>
+                  <span className="font-mono text-white font-medium text-xs">95/100</span>
                 </div>
               </div>
-            )
-          })}
-        </div>
-
-        {/* Bottom panels */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-            <div className="text-xs text-gray-400 uppercase tracking-wide mb-1">Agent Reputation</div>
-            <div className="text-2xl font-bold text-teal-700 font-mono">
-              {reputationDisplay}
-              {hasRun && reputationDisplay > agent.reputation && <span className="text-sm text-green-600 ml-2 font-medium">+1</span>}
-            </div>
-            <div className="text-xs text-gray-400 mt-1">Read live from ReputationRegistry. Tick is a demo visualisation.</div>
-          </div>
-          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-            <div className="text-xs text-gray-400 uppercase tracking-wide mb-2">Proven Flow Data</div>
-            <div className="space-y-1.5 text-xs">
-              <div className="flex justify-between"><span className="text-gray-500">Status</span><span className="text-green-600 font-mono font-medium">Released</span></div>
-              <div className="flex justify-between"><span className="text-gray-500">fundedViaHSP</span><span className="text-teal-600 font-mono font-medium">true</span></div>
-              <div className="flex justify-between"><span className="text-gray-500">Reward</span><span className="text-gray-900 font-mono font-medium">10.0 USDC</span></div>
-              <div className="flex justify-between"><span className="text-gray-500">Reputation</span><span className="text-gray-900 font-mono font-medium">95/100</span></div>
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="pt-3 border-t border-gray-100 flex items-center justify-between flex-wrap gap-2 text-xs text-gray-400">
+        <div className="pt-4 mt-4 border-t border-white/[0.06] flex items-center justify-between flex-wrap gap-2 text-xs text-gray-500">
           <span>Demo simulation. Underlying contracts and HSP flow are live on HashKey Chain Testnet.</span>
-          <a href={`${EXPLORER_URL}/address/${CONTRACTS.jobEscrow}`} target="_blank" rel="noopener noreferrer" className="text-teal-600 hover:text-teal-800 hover:underline font-medium">
-            View full lifecycle on explorer
+          <a href={`${EXPLORER_URL}/address/${CONTRACTS.jobEscrow}`} target="_blank" rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-cyan-400 hover:text-cyan-300 font-medium transition-colors">
+            View full lifecycle on explorer <ExternalLink className="w-3 h-3" />
           </a>
         </div>
       </div>

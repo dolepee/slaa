@@ -6,6 +6,7 @@ import { hashkeyTestnet, CONTRACTS, EXPLORER_URL } from '@/lib/config'
 import SiteNav from '@/components/SiteNav'
 import Link from 'next/link'
 import { JOB_STATUS, JOB_ESCROW_ABI } from '@/lib/contracts'
+import { ArrowLeft, ExternalLink, CheckCircle2 } from 'lucide-react'
 
 export default function JobDetail({ params }: { params: { id: string } }) {
   const jobId = parseInt(params.id)
@@ -74,6 +75,8 @@ export default function JobDetail({ params }: { params: { id: string } }) {
     setIsSubmitting(false)
   }
 
+  const inputClass = "px-3 py-2 bg-white/[0.04] border border-white/10 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none transition-all font-mono text-sm"
+
   if (loading) {
     return (
       <div className="min-h-screen">
@@ -99,64 +102,57 @@ export default function JobDetail({ params }: { params: { id: string } }) {
     <div className="min-h-screen">
       <SiteNav current="jobs" />
       <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Link href="/jobs" className="inline-flex items-center text-xs text-gray-400 hover:text-gray-600 mb-4">
-          &larr; Back to Job Board
+        <Link href="/jobs" className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-gray-300 mb-4 transition-colors">
+          <ArrowLeft className="w-3 h-3" /> Back to Job Board
         </Link>
 
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 sm:p-8">
+        <div className="glass-card p-6 sm:p-8">
           <div className="flex justify-between items-start mb-6">
             <div>
-              <h1 className="text-xl font-bold text-gray-900">Job <span className="font-mono">#{jobId}</span></h1>
-              <p className="text-sm text-gray-500 mt-1">{job.description}</p>
+              <h1 className="text-xl font-bold text-white">Job <span className="font-mono">#{jobId}</span></h1>
+              <p className="text-sm text-gray-400 mt-1">{job.description}</p>
             </div>
-            <span className="text-lg font-bold font-mono text-teal-700">{reward} USDC</span>
+            <span className="text-lg font-bold font-mono bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">{reward} USDC</span>
           </div>
 
-          <div className="border-t border-gray-100 pt-5">
-            <h2 className="text-sm font-semibold text-gray-700 mb-3">
-              Status: <span className="text-teal-600">{JOB_STATUS[status as keyof typeof JOB_STATUS] || status}</span>
+          <div className="border-t border-white/[0.06] pt-5">
+            <h2 className="text-sm font-semibold text-gray-300 mb-3">
+              Status: <span className="text-cyan-400">{JOB_STATUS[status as keyof typeof JOB_STATUS] || status}</span>
             </h2>
 
             {/* Progress indicator */}
             <div className="flex items-center space-x-2 mb-5">
               {[0, 1, 2, 3, 4].map((s) => (
                 <div key={s} className="flex items-center">
-                  <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
-                    status >= s ? 'bg-teal-500 text-white' : 'bg-gray-100 text-gray-400'
+                  <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+                    status > s ? 'bg-emerald-500 text-white' : status === s ? 'bg-cyan-500 text-white glow-active' : 'bg-white/[0.06] text-gray-600'
                   }`}>
-                    {status > s ? '\u2713' : s + 1}
+                    {status > s ? <CheckCircle2 className="w-4 h-4" /> : s + 1}
                   </div>
-                  {s < 4 && <div className={`w-6 h-0.5 mx-1 ${status > s ? 'bg-teal-500' : 'bg-gray-200'}`} />}
+                  {s < 4 && <div className={`w-6 h-0.5 mx-1 transition-all ${status > s ? 'bg-emerald-500' : 'bg-white/[0.06]'}`} />}
                 </div>
               ))}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-              <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                <span className="text-xs text-gray-400 uppercase tracking-wide">Employer</span>
-                <div className="font-mono text-xs text-gray-600 mt-0.5 break-all">{job.employer}</div>
+              <div className="bg-white/[0.03] rounded-xl p-3 border border-white/[0.06]">
+                <span className="text-[10px] text-gray-500 uppercase tracking-wider">Employer</span>
+                <div className="font-mono text-xs text-gray-300 mt-0.5 break-all">{job.employer}</div>
               </div>
-              <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                <span className="text-xs text-gray-400 uppercase tracking-wide">Agent</span>
-                <div className="text-xs text-gray-600 mt-0.5 font-mono">{job.agentTokenId > 0 ? `Token #${job.agentTokenId}` : 'Not assigned'}</div>
+              <div className="bg-white/[0.03] rounded-xl p-3 border border-white/[0.06]">
+                <span className="text-[10px] text-gray-500 uppercase tracking-wider">Agent</span>
+                <div className="text-xs text-gray-300 mt-0.5 font-mono">{job.agentTokenId > 0 ? `Token #${job.agentTokenId}` : 'Not assigned'}</div>
               </div>
             </div>
           </div>
 
           {/* Accept Job */}
           {status === 1 && (
-            <div className="mt-5 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-              <h3 className="text-sm font-medium text-amber-800 mb-2">Accept This Job</h3>
+            <div className="mt-5 p-4 bg-amber-500/[0.06] border border-amber-500/20 rounded-xl">
+              <h3 className="text-sm font-medium text-amber-300 mb-2">Accept This Job</h3>
               <p className="text-xs text-gray-500 mb-3">This job is funded and waiting for an agent.</p>
               <div className="flex gap-2">
-                <input
-                  type="number"
-                  value={acceptTokenId}
-                  onChange={(e) => setAcceptTokenId(e.target.value)}
-                  placeholder="Agent Token ID"
-                  min="1"
-                  className="px-3 py-2 border border-gray-300 rounded-lg font-mono text-sm w-36 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                />
+                <input type="number" value={acceptTokenId} onChange={(e) => setAcceptTokenId(e.target.value)} placeholder="Agent Token ID" min="1" className={`${inputClass} w-36`} />
                 <button
                   onClick={async () => {
                     if (!window.ethereum) return
@@ -179,7 +175,7 @@ export default function JobDetail({ params }: { params: { id: string } }) {
                     setIsSubmitting(false)
                   }}
                   disabled={isSubmitting}
-                  className="px-4 py-2 bg-amber-500 text-white rounded-lg text-sm font-semibold hover:bg-amber-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                  className="px-4 py-2 bg-amber-500 text-black rounded-lg text-sm font-semibold hover:bg-amber-400 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                 >
                   {isSubmitting ? 'Accepting...' : 'Accept Job'}
                 </button>
@@ -189,20 +185,11 @@ export default function JobDetail({ params }: { params: { id: string } }) {
 
           {/* Submit Work */}
           {status === 2 && (
-            <div className="mt-5 p-4 bg-teal-50 border border-teal-200 rounded-lg">
-              <h3 className="text-sm font-medium text-teal-800 mb-2">Submit Work</h3>
-              <input
-                type="text"
-                value={deliverableCID}
-                onChange={(e) => setDeliverableCID(e.target.value)}
-                placeholder="ipfs://Qm..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg font-mono text-sm mb-3 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-              />
-              <button
-                onClick={handleSubmitWork}
-                disabled={!deliverableCID || isSubmitting}
-                className="px-4 py-2 bg-teal-600 text-white rounded-lg text-sm font-semibold hover:bg-teal-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-              >
+            <div className="mt-5 p-4 bg-cyan-500/[0.06] border border-cyan-500/20 rounded-xl">
+              <h3 className="text-sm font-medium text-cyan-300 mb-2">Submit Work</h3>
+              <input type="text" value={deliverableCID} onChange={(e) => setDeliverableCID(e.target.value)} placeholder="ipfs://Qm..." className={`${inputClass} w-full mb-3`} />
+              <button onClick={handleSubmitWork} disabled={!deliverableCID || isSubmitting}
+                className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all">
                 {isSubmitting ? 'Submitting...' : 'Submit Work'}
               </button>
             </div>
@@ -210,23 +197,12 @@ export default function JobDetail({ params }: { params: { id: string } }) {
 
           {/* Validate & Release */}
           {status === 3 && (
-            <div className="mt-5 p-4 bg-green-50 border border-green-200 rounded-lg">
-              <h3 className="text-sm font-medium text-green-800 mb-2">Validate & Release Payment</h3>
+            <div className="mt-5 p-4 bg-emerald-500/[0.06] border border-emerald-500/20 rounded-xl">
+              <h3 className="text-sm font-medium text-emerald-300 mb-2">Validate & Release Payment</h3>
               <div className="flex gap-2 mb-2">
-                <input
-                  type="number"
-                  value={reputationScore}
-                  onChange={(e) => setReputationScore(e.target.value)}
-                  placeholder="85"
-                  min="0"
-                  max="100"
-                  className="px-3 py-2 border border-gray-300 rounded-lg font-mono text-sm w-24 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                />
-                <button
-                  onClick={handleValidateAndRelease}
-                  disabled={isSubmitting}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-                >
+                <input type="number" value={reputationScore} onChange={(e) => setReputationScore(e.target.value)} placeholder="85" min="0" max="100" className={`${inputClass} w-24`} />
+                <button onClick={handleValidateAndRelease} disabled={isSubmitting}
+                  className="px-4 py-2 bg-emerald-500 text-black rounded-lg text-sm font-semibold hover:bg-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed transition-all">
                   {isSubmitting ? 'Processing...' : 'Validate & Release'}
                 </button>
               </div>
@@ -236,22 +212,18 @@ export default function JobDetail({ params }: { params: { id: string } }) {
 
           {/* Released */}
           {status === 4 && (
-            <div className="mt-5 p-3 bg-green-50 border border-green-200 rounded-lg">
-              <p className="text-green-700 font-medium text-sm">Payment released successfully</p>
+            <div className="mt-5 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+              <p className="text-emerald-400 font-medium text-sm">Payment released successfully</p>
             </div>
           )}
 
-          <div className="mt-5 pt-4 border-t border-gray-100">
+          <div className="mt-5 pt-4 border-t border-white/[0.06]">
             {job.fundedViaHSP && (
-              <p className="mb-2 text-xs text-teal-600">This job was funded through HSP checkout.</p>
+              <p className="mb-2 text-xs text-cyan-400/70">This job was funded through HSP checkout.</p>
             )}
-            <a
-              href={`${EXPLORER_URL}/address/${CONTRACTS.jobEscrow}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-teal-600 hover:text-teal-800 font-mono hover:underline transition-colors"
-            >
-              View Contract on Explorer
+            <a href={`${EXPLORER_URL}/address/${CONTRACTS.jobEscrow}`} target="_blank" rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-xs text-cyan-400/60 hover:text-cyan-300 font-mono transition-colors">
+              View Contract on Explorer <ExternalLink className="w-3 h-3" />
             </a>
           </div>
         </div>

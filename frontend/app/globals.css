@@ -3,13 +3,15 @@
 @tailwind utilities;
 
 body {
-  color: #1a1a1a;
-  background: #f8f9fa;
+  color: #e2e8f0;
+  background: #0B0F1A;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
+/* Skeleton loader for dark theme */
 .skeleton {
-  background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
+  background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0.03) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
   border-radius: 6px;
@@ -18,4 +20,29 @@ body {
 @keyframes shimmer {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
+}
+
+/* Glow pulse for active stepper nodes */
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(56, 189, 248, 0.4); }
+  50% { box-shadow: 0 0 20px rgba(56, 189, 248, 0.7), 0 0 40px rgba(56, 189, 248, 0.2); }
+}
+.glow-active { animation: glow-pulse 2s ease-in-out infinite; }
+
+/* Subtle hero radial glow */
+.hero-glow {
+  background: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(56,189,248,0.08), transparent 70%);
+}
+
+/* Glassmorphism card utility */
+.glass-card {
+  background: rgba(255,255,255,0.03);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+}
+.glass-card:hover {
+  background: rgba(255,255,255,0.05);
+  border-color: rgba(255,255,255,0.12);
 }
