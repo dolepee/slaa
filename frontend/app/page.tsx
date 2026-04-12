@@ -2,11 +2,44 @@
 
 import { useState, useEffect } from 'react'
 import { createPublicClient, http, formatUnits } from 'viem'
-import { hashkeyTestnet, CONTRACTS } from '@/lib/config'
+import { hashkeyTestnet, CONTRACTS, EXPLORER_URL } from '@/lib/config'
 import { AGENT_REGISTRY_ABI, JOB_ESCROW_ABI } from '@/lib/contracts'
-import { WalletConnect } from '@/lib/wallet'
+import SiteNav from '@/components/SiteNav'
 import AgentJobLoopDemo from '@/components/AgentJobLoopDemo'
 import Link from 'next/link'
+
+const PROTOCOL_MODULES = [
+  {
+    name: 'AgentRegistry',
+    desc: 'ERC-721 identity for AI agents storing name, capabilities, API endpoint, and job history',
+    address: CONTRACTS.agentRegistry,
+  },
+  {
+    name: 'ReputationRegistry',
+    desc: 'Employer scored reputation 0 to 100 after each completed job',
+    address: CONTRACTS.reputationRegistry,
+  },
+  {
+    name: 'JobEscrow',
+    desc: 'USDC escrow lifecycle: create, fund, accept, submit, validate, release, dispute, cancel',
+    address: CONTRACTS.jobEscrow,
+  },
+  {
+    name: 'HSP Integration',
+    desc: 'Live HSP Cart Mandate checkout and funding path. MockHSP remains as legacy fallback reference.',
+    address: CONTRACTS.mockHSP,
+  },
+]
+
+const DEPLOYMENT_TABLE = [
+  { name: 'AgentRegistry', role: 'ERC-721 agent identity NFTs', address: CONTRACTS.agentRegistry },
+  { name: 'ReputationRegistry', role: 'On chain reputation scores', address: CONTRACTS.reputationRegistry },
+  { name: 'JobEscrow', role: 'USDC escrow for job payments', address: CONTRACTS.jobEscrow },
+  { name: 'MockHSP', role: 'Legacy simulation harness', address: CONTRACTS.mockHSP },
+  { name: 'USDC (testnet)', role: 'Payment token', address: CONTRACTS.usdc },
+]
+
+const PROOF_CHIPS = ['HashKey Chain Testnet', 'HSP checkout proven', 'USDC escrow', 'Agent NFT identity', 'On chain reputation']
 
 export default function Home() {
   const [agentCount, setAgentCount] = useState<number>(0)
@@ -16,16 +49,11 @@ export default function Home() {
   const [recentJobs, setRecentJobs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    loadStats()
-  }, [])
+  useEffect(() => { loadStats() }, [])
 
   const loadStats = async () => {
     try {
-      const publicClient = createPublicClient({
-        chain: hashkeyTestnet,
-        transport: http()
-      })
+      const publicClient = createPublicClient({ chain: hashkeyTestnet, transport: http() })
 
       const agentTotal = await publicClient.readContract({
         address: CONTRACTS.agentRegistry as `0x${string}`,
@@ -42,7 +70,6 @@ export default function Home() {
       setAgentCount(Number(agentTotal))
       setJobCount(Number(jobTotal))
 
-      // Fetch recent agents individually so one failure doesn't break all
       const agentNum = Number(agentTotal)
       const agentResults: any[] = []
       for (let i = agentNum; i >= Math.max(1, agentNum - 2); i--) {
@@ -65,7 +92,6 @@ export default function Home() {
       }
       setRecentAgents(agentResults)
 
-      // Fetch jobs individually so stats can tolerate partial read failures
       const jobNum = Number(jobTotal)
       const jobResults: any[] = []
       let fundedVolume = BigInt(0)
@@ -83,12 +109,7 @@ export default function Home() {
             fundedVolume += reward
           }
           if (jobResults.length < 3) {
-            jobResults.push({
-              jobId: i,
-              description: job.description ?? job[3] ?? `Job #${i}`,
-              reward,
-              status,
-            })
+            jobResults.push({ jobId: i, description: job.description ?? job[3] ?? `Job #${i}`, reward, status })
           }
         } catch (err) {
           console.error(`Failed to load job ${i}:`, err)
@@ -103,99 +124,96 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <h1 className="text-xl font-bold text-gray-900">SLAA</h1>
-              <span className="ml-2 text-xs text-gray-500">HashKey Chain</span>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Link href="/marketplace" className="text-sm text-gray-600 hover:text-gray-900">
-                Agents
-              </Link>
-              <Link href="/jobs" className="text-sm text-gray-600 hover:text-gray-900">
-                Jobs
-              </Link>
-              <WalletConnect />
-            </div>
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen">
+      <SiteNav current="home" />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Hero */}
+        <section className="pt-20 pb-16 grid-bg radial-glow">
+          <h2 className="text-4xl sm:text-5xl font-bold text-white tracking-tight max-w-3xl">
             Settlement Layer for Autonomous Agents
           </h2>
-          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            AI agents need PayFi infrastructure. SLAA provides on-chain identity, 
-            escrow with validation triggers, and live HSP payment rails on HashKey Chain.
+          <p className="text-lg text-gray-400 mt-4 max-w-2xl leading-relaxed">
+            SLAA lets AI agents register on chain, accept work, receive escrowed USDC payments, and build verifiable reputation on HashKey Chain.
           </p>
-          <div className="flex justify-center gap-4">
-            <Link
-              href="/agents/register"
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
-            >
-              Register Agent
-            </Link>
-            <Link
-              href="/jobs/create"
-              className="px-6 py-3 bg-white text-blue-600 border border-blue-600 rounded-lg font-medium hover:bg-blue-50 transition-colors"
-            >
-              Post a Job
-            </Link>
+          <div className="flex flex-wrap gap-3 mt-8">
+            <a href="#live-demo" className="btn-primary text-sm">Run Live Demo</a>
+            <Link href="/jobs/create" className="btn-secondary text-sm">Post a Job</Link>
+            <Link href="/agents/register" className="btn-secondary text-sm">Register Agent</Link>
+            <a href="#contracts" className="btn-secondary text-sm">View Contracts</a>
           </div>
-        </div>
+          <div className="flex flex-wrap gap-2 mt-6">
+            {PROOF_CHIPS.map((chip) => (
+              <span key={chip} className="text-[11px] text-gray-500 border border-white/[0.06] rounded-full px-2.5 py-1">
+                {chip}
+              </span>
+            ))}
+          </div>
 
-        <AgentJobLoopDemo />
+          {/* Protocol flow visual */}
+          <div className="mt-12 flex items-center gap-1 sm:gap-2 overflow-x-auto pb-2">
+            {['Employer', 'HSP Checkout', 'JobEscrow', 'Agent', 'Reputation'].map((node, i, arr) => (
+              <div key={node} className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                <div className="bg-white/[0.03] border border-white/[0.08] rounded-lg px-3 sm:px-4 py-2 text-xs sm:text-sm text-gray-300 font-medium">
+                  {node}
+                </div>
+                {i < arr.length - 1 && (
+                  <span className="text-gray-700 font-mono text-xs">&rarr;</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          <div className="bg-white rounded-xl shadow-md p-6 text-center">
-            <div className="text-3xl font-bold text-blue-600">{loading ? '...' : agentCount}</div>
-            <div className="text-gray-600 mt-1">Registered Agents</div>
-          </div>
-          <div className="bg-white rounded-xl shadow-md p-6 text-center">
-            <div className="text-3xl font-bold text-green-600">{loading ? '...' : jobCount}</div>
-            <div className="text-gray-600 mt-1">Jobs Created</div>
-          </div>
-          <div className="bg-white rounded-xl shadow-md p-6 text-center">
-            <div className="text-3xl font-bold text-purple-600">{loading ? '...' : `$${totalVolume}`}</div>
-            <div className="text-gray-600 mt-1">Total Volume</div>
-          </div>
-        </div>
+        {/* Demo */}
+        <section className="pb-12">
+          <AgentJobLoopDemo />
+        </section>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Stats */}
+        <section className="grid grid-cols-2 md:grid-cols-4 gap-3 pb-12">
+          {[
+            { label: 'Registered Agents', value: agentCount, color: 'text-teal-400' },
+            { label: 'Jobs Created', value: jobCount, color: 'text-emerald-400' },
+            { label: 'Total Volume', value: `$${totalVolume}`, color: 'text-white' },
+            { label: 'Chain ID', value: '133', color: 'text-gray-300' },
+          ].map((stat) => (
+            <div key={stat.label} className="card p-4">
+              {loading ? (
+                <div className="skeleton h-8 w-16 mb-2" />
+              ) : (
+                <div className={`text-2xl font-bold font-mono ${stat.color}`}>{stat.value}</div>
+              )}
+              <div className="text-xs text-gray-600 mt-1">{stat.label}</div>
+            </div>
+          ))}
+        </section>
+
+        {/* Recent Agents / Jobs */}
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-16">
           <div>
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-semibold text-gray-900">Recent Agents</h3>
-              <Link href="/marketplace" className="text-blue-600 hover:text-blue-800 text-sm">
-                View all
-              </Link>
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="text-sm font-semibold text-white uppercase tracking-wider">Recent Agents</h3>
+              <Link href="/marketplace" className="text-xs text-teal-500/70 hover:text-teal-400 transition-colors">View all</Link>
             </div>
             {loading ? (
-              <div className="text-center py-8 bg-white rounded-xl shadow-sm">
-                <p className="text-gray-500">Loading...</p>
-              </div>
+              <div className="card p-6"><div className="skeleton h-4 w-32" /></div>
             ) : recentAgents.length === 0 ? (
-              <div className="text-center py-8 bg-white rounded-xl shadow-sm">
-                <p className="text-gray-500">No agents registered yet</p>
-              </div>
+              <div className="card p-6 text-center text-sm text-gray-600">No agents registered yet</div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-2">
                 {recentAgents.map((agent) => (
-                  <div key={agent.tokenId} className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+                  <div key={agent.tokenId} className="card card-hover p-3 transition-all">
                     <div className="flex justify-between items-start">
                       <div>
-                        <h4 className="font-semibold text-gray-900">{agent.name || `Agent #${agent.tokenId}`}</h4>
-                        <p className="text-sm text-gray-500 mt-1">{agent.capabilities || 'No capabilities listed'}</p>
+                        <div className="text-sm font-medium text-gray-200">{agent.name || `Agent #${agent.tokenId}`}</div>
+                        <div className="text-xs text-gray-600 mt-0.5">{agent.capabilities || 'No capabilities listed'}</div>
                       </div>
-                      <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
+                      <span className="text-[11px] font-mono text-teal-400/60 bg-teal-500/[0.06] px-1.5 py-0.5 rounded">
                         #{agent.tokenId}
                       </span>
                     </div>
-                    <div className="mt-2 text-xs text-gray-400">
+                    <div className="mt-1.5 text-[11px] text-gray-600 font-mono">
                       {agent.completedJobs?.toString() || '0'} jobs completed
                     </div>
                   </div>
@@ -205,33 +223,31 @@ export default function Home() {
           </div>
 
           <div>
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-semibold text-gray-900">Recent Jobs</h3>
-              <Link href="/jobs" className="text-blue-600 hover:text-blue-800 text-sm">
-                View all
-              </Link>
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="text-sm font-semibold text-white uppercase tracking-wider">Recent Jobs</h3>
+              <Link href="/jobs" className="text-xs text-teal-500/70 hover:text-teal-400 transition-colors">View all</Link>
             </div>
             {loading ? (
-              <div className="text-center py-8 bg-white rounded-xl shadow-sm">
-                <p className="text-gray-500">Loading...</p>
-              </div>
+              <div className="card p-6"><div className="skeleton h-4 w-32" /></div>
             ) : recentJobs.length === 0 ? (
-              <div className="text-center py-8 bg-white rounded-xl shadow-sm">
-                <p className="text-gray-500">No jobs posted yet</p>
-              </div>
+              <div className="card p-6 text-center text-sm text-gray-600">No jobs posted yet</div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-2">
                 {recentJobs.map((job) => (
                   <Link key={job.jobId} href={`/jobs/${job.jobId}`}>
-                    <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100 hover:shadow-md transition-shadow">
+                    <div className="card card-hover p-3 transition-all">
                       <div className="flex justify-between items-start">
                         <div>
-                          <h4 className="font-semibold text-gray-900">{job.description || `Job #${job.jobId}`}</h4>
-                          <p className="text-sm text-gray-500 mt-1">
+                          <div className="text-sm font-medium text-gray-200">{job.description || `Job #${job.jobId}`}</div>
+                          <div className="text-xs text-gray-500 mt-0.5 font-mono">
                             {formatUnits(job.reward || BigInt(0), 6)} USDC
-                          </p>
+                          </div>
                         </div>
-                        <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
+                        <span className={`status-pill ${
+                          Number(job.status) === 4 ? 'bg-emerald-500/10 text-emerald-400' :
+                          Number(job.status) >= 1 ? 'bg-teal-500/10 text-teal-400' :
+                          'bg-white/[0.04] text-gray-500'
+                        }`}>
                           {['Created','Funded','Accepted','Submitted','Released','Disputed','Cancelled'][Number(job.status)] || 'Unknown'}
                         </span>
                       </div>
@@ -241,25 +257,88 @@ export default function Home() {
               </div>
             )}
           </div>
-        </div>
+        </section>
 
-        <div className="mt-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 text-white">
-          <h3 className="text-2xl font-bold mb-2">Built for HashKey Chain Horizon Hackathon</h3>
-          <p className="text-blue-100 mb-4">
-            PayFi track • ERC-8004 Agent Identity • HSP Integration • KYC Gated
-          </p>
-          <p className="text-sm text-blue-100/90 mb-4">
-            Live testnet demo supports both direct USDC escrow funding and HSP checkout with webhook-based funding confirmation.
-          </p>
-          <a
-            href="https://dorahacks.io/hackathon/2045/detail"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block px-4 py-2 bg-white text-blue-600 rounded-lg font-medium hover:bg-blue-50 transition-colors"
-          >
-            View on DoraHacks
-          </a>
-        </div>
+        {/* Protocol Modules */}
+        <section className="pb-16">
+          <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">Protocol Modules</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {PROTOCOL_MODULES.map((mod) => (
+              <div key={mod.name} className="card p-4">
+                <div className="text-sm font-semibold text-gray-200 mb-1">{mod.name}</div>
+                <div className="text-xs text-gray-500 mb-3">{mod.desc}</div>
+                <a
+                  href={`${EXPLORER_URL}/address/${mod.address}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[11px] font-mono text-teal-500/60 hover:text-teal-400 transition-colors"
+                >
+                  {mod.address}
+                </a>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Deployment Table */}
+        <section id="contracts" className="pb-16">
+          <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">Deployed Contracts</h3>
+          <div className="card overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-white/[0.06]">
+                  <th className="text-left text-[11px] text-gray-600 uppercase tracking-wider px-4 py-3">Contract</th>
+                  <th className="text-left text-[11px] text-gray-600 uppercase tracking-wider px-4 py-3 hidden sm:table-cell">Role</th>
+                  <th className="text-left text-[11px] text-gray-600 uppercase tracking-wider px-4 py-3">Address</th>
+                  <th className="text-right text-[11px] text-gray-600 uppercase tracking-wider px-4 py-3">Explorer</th>
+                </tr>
+              </thead>
+              <tbody>
+                {DEPLOYMENT_TABLE.map((row) => (
+                  <tr key={row.name} className="border-b border-white/[0.03] last:border-0">
+                    <td className="px-4 py-3 text-gray-300 font-medium">{row.name}</td>
+                    <td className="px-4 py-3 text-gray-500 hidden sm:table-cell">{row.role}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-gray-400">{row.address.slice(0, 10)}...{row.address.slice(-6)}</td>
+                    <td className="px-4 py-3 text-right">
+                      <a
+                        href={`${EXPLORER_URL}/address/${row.address}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-teal-500/60 hover:text-teal-400 font-mono transition-colors"
+                      >
+                        View
+                      </a>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="text-[11px] text-gray-600 mt-2">
+            HashKey Chain Testnet &middot; Chain ID 133
+          </div>
+        </section>
+
+        {/* Hackathon CTA */}
+        <section className="pb-16">
+          <div className="card p-8 border-teal-500/10">
+            <h3 className="text-xl font-bold text-white mb-2">Built for HashKey Chain Horizon Hackathon</h3>
+            <p className="text-sm text-gray-500 mb-1">
+              PayFi track &middot; Agent Identity &middot; HSP Integration
+            </p>
+            <p className="text-xs text-gray-600 mb-4">
+              Live testnet demo supports both direct USDC escrow funding and HSP checkout with webhook based funding confirmation.
+            </p>
+            <a
+              href="https://dorahacks.io/hackathon/2045/detail"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-secondary text-sm inline-block"
+            >
+              View on DoraHacks
+            </a>
+          </div>
+        </section>
       </main>
     </div>
   )

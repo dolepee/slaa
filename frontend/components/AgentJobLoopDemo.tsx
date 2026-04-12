@@ -19,9 +19,6 @@ interface Step {
   offchain?: boolean
 }
 
-// Real on-chain transaction hashes from the proven SLAA lifecycle on
-// HashKey Chain Testnet. Each step links to a verifiable receipt so judges
-// can confirm the entire flow actually executed end to end.
 const PROVEN_TX = {
   jobCreated: '0x41e00d39b9c8db34591574f3a76ff77c656c6cd0bf909e440702d4e142f06a34',
   jobFunded: '0xff0698f1a4f9cc0ac642f2d96984dd3d5bf38b9b750df1abebb378e8e069e64f',
@@ -36,28 +33,28 @@ const STEPS: Step[] = [
     title: 'Someone posts a paid task',
     detail: 'Employer creates a job in JobEscrow with a USDC reward and a deadline.',
     txLink: `${EXPLORER_URL}/tx/${PROVEN_TX.jobCreated}`,
-    txLabel: 'View JobCreated tx',
+    txLabel: 'JobCreated',
   },
   {
     id: 2,
     title: 'The payment is locked in escrow',
     detail: 'Funded via HSP checkout, or a direct USDC transfer into the escrow contract.',
     txLink: `${EXPLORER_URL}/tx/${PROVEN_TX.jobFunded}`,
-    txLabel: 'View JobFunded tx',
+    txLabel: 'JobFunded',
   },
   {
     id: 3,
     title: 'An AI agent claims the work',
     detail: 'The agent NFT is attached to the job via acceptJob().',
     txLink: `${EXPLORER_URL}/tx/${PROVEN_TX.jobAccepted}`,
-    txLabel: 'View JobAccepted tx',
+    txLabel: 'JobAccepted',
   },
   {
     id: 4,
     title: 'The agent finishes and submits the work',
     detail: 'Deliverable uploaded to decentralized storage. The CID is recorded onchain.',
     txLink: `${EXPLORER_URL}/tx/${PROVEN_TX.workSubmitted}`,
-    txLabel: 'View WorkSubmitted tx',
+    txLabel: 'WorkSubmitted',
   },
   {
     id: 5,
@@ -70,14 +67,14 @@ const STEPS: Step[] = [
     title: 'The agent gets paid automatically',
     detail: 'validateAndRelease() sends USDC from escrow to the agent wallet.',
     txLink: `${EXPLORER_URL}/tx/${PROVEN_TX.paymentReleased}`,
-    txLabel: 'View PaymentReleased tx',
+    txLabel: 'PaymentReleased',
   },
   {
     id: 7,
     title: 'The agent earns reputation onchain',
     detail: 'ReputationRegistry stores the new score. The reputation counter ticks up.',
     txLink: `${EXPLORER_URL}/address/${CONTRACTS.reputationRegistry}`,
-    txLabel: 'View ReputationRegistry',
+    txLabel: 'ReputationRegistry',
   },
 ]
 
@@ -102,26 +99,22 @@ function shorten(addr: string): string {
   return `${addr.slice(0, 6)}...${addr.slice(-4)}`
 }
 
+function shortenHash(hash: string): string {
+  return `${hash.slice(0, 10)}...${hash.slice(-6)}`
+}
+
 export default function AgentJobLoopDemo() {
   const [agent, setAgent] = useState<AgentInfo>(FALLBACK_AGENT)
-  const [stepStates, setStepStates] = useState<StepState[]>(
-    () => STEPS.map(() => 'pending')
-  )
+  const [stepStates, setStepStates] = useState<StepState[]>(() => STEPS.map(() => 'pending'))
   const [running, setRunning] = useState(false)
   const [hasRun, setHasRun] = useState(false)
-  const [reputationDisplay, setReputationDisplay] = useState<number>(
-    FALLBACK_AGENT.reputation
-  )
+  const [reputationDisplay, setReputationDisplay] = useState<number>(FALLBACK_AGENT.reputation)
 
   useEffect(() => {
     let cancelled = false
     const loadAgent = async () => {
       try {
-        const client = createPublicClient({
-          chain: hashkeyTestnet,
-          transport: http(),
-        })
-
+        const client = createPublicClient({ chain: hashkeyTestnet, transport: http() })
         const total = (await client.readContract({
           address: CONTRACTS.agentRegistry as `0x${string}`,
           abi: AGENT_REGISTRY_ABI,
@@ -136,14 +129,7 @@ export default function AgentJobLoopDemo() {
           abi: AGENT_REGISTRY_ABI,
           functionName: 'getAgentProfile',
           args: [BigInt(tokenId)],
-        })) as {
-          name: string
-          capabilities: string
-          endpoint: string
-          wallet: `0x${string}`
-          totalJobs: bigint
-          completedJobs: bigint
-        }
+        })) as { name: string; capabilities: string; endpoint: string; wallet: `0x${string}`; totalJobs: bigint; completedJobs: bigint }
 
         let reputation = 0
         try {
@@ -159,21 +145,14 @@ export default function AgentJobLoopDemo() {
         }
 
         if (cancelled) return
-        setAgent({
-          tokenId,
-          name: profile.name || `Agent #${tokenId}`,
-          wallet: profile.wallet,
-          reputation,
-        })
+        setAgent({ tokenId, name: profile.name || `Agent #${tokenId}`, wallet: profile.wallet, reputation })
         setReputationDisplay(reputation)
       } catch (err) {
         console.error('AgentJobLoopDemo: live read failed, using fallback', err)
       }
     }
     loadAgent()
-    return () => {
-      cancelled = true
-    }
+    return () => { cancelled = true }
   }, [])
 
   const runDemo = async () => {
@@ -182,9 +161,7 @@ export default function AgentJobLoopDemo() {
     setHasRun(true)
     setStepStates(STEPS.map(() => 'pending'))
     setReputationDisplay(agent.reputation)
-
     const next = STEPS.map(() => 'pending') as StepState[]
-
     for (let i = 0; i < STEPS.length; i++) {
       next[i] = 'active'
       setStepStates([...next])
@@ -193,73 +170,65 @@ export default function AgentJobLoopDemo() {
       setStepStates([...next])
       await sleep(150)
     }
-
-    // Animate reputation tick at the end
     setReputationDisplay(agent.reputation + 1)
     setRunning(false)
   }
 
-  const sleep = (ms: number) =>
-    new Promise<void>((resolve) => setTimeout(resolve, ms))
+  const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
 
   return (
-    <section className="mb-12 bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-4">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <div>
-            <h3 className="text-lg font-bold text-white">
-              Watch an AI agent earn money on HashKey Chain
-            </h3>
-            <p className="text-blue-100 text-sm mt-1">
-              A human hires an AI agent. The money sits in escrow. The work
-              gets done and paid out. The agent earns reputation onchain.
-            </p>
-          </div>
-          <span className="px-3 py-1 bg-white/20 text-white text-xs font-medium rounded-full backdrop-blur">
+    <section id="live-demo" className="card glow-teal overflow-hidden">
+      {/* Header */}
+      <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between flex-wrap gap-2">
+        <div>
+          <h3 className="text-base font-semibold text-white">
+            Live Execution Trace
+          </h3>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Watch the full agent job lifecycle on HashKey Chain Testnet
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="status-pill bg-teal-500/10 text-teal-400 border border-teal-500/20">
+            Contract proof is real
+          </span>
+          <span className="status-pill bg-white/[0.04] text-gray-500 border border-white/[0.06]">
             Demo simulation
           </span>
         </div>
       </div>
 
       <div className="px-6 py-6">
-        <div className="flex items-center justify-between gap-4 mb-6">
-          <div className="flex-1 bg-gray-50 rounded-xl p-4 border border-gray-200">
-            <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">
-              Employer
-            </div>
-            <div className="font-semibold text-gray-900">Human or dApp</div>
-            <div className="text-xs text-gray-500 mt-1 font-mono">
-              0xEmp...loyer
-            </div>
+        {/* Actors */}
+        <div className="flex items-center justify-between gap-3 mb-6">
+          <div className="flex-1 bg-white/[0.02] rounded-lg p-3 border border-white/[0.06]">
+            <div className="text-[10px] text-gray-600 uppercase tracking-wider mb-1">Employer</div>
+            <div className="text-sm font-medium text-gray-200">Human or dApp</div>
+            <div className="text-[11px] text-gray-600 mt-0.5 font-mono">0xEmp...loyer</div>
           </div>
-          <div className="flex-shrink-0 text-gray-400 text-2xl">⇄</div>
-          <div className="flex-1 bg-gray-50 rounded-xl p-4 border border-gray-200">
-            <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">
-              AI Agent
+          <div className="flex-shrink-0 text-gray-700 text-lg font-mono">&rarr;</div>
+          <div className="flex-1 bg-white/[0.02] rounded-lg p-3 border border-white/[0.06]">
+            <div className="text-[10px] text-gray-600 uppercase tracking-wider mb-1">AI Agent</div>
+            <div className="text-sm font-medium text-gray-200">
+              {agent.name} <span className="text-xs text-gray-600">#{agent.tokenId}</span>
             </div>
-            <div className="font-semibold text-gray-900">
-              {agent.name}{' '}
-              <span className="text-xs text-gray-400 font-normal">
-                #{agent.tokenId}
-              </span>
-            </div>
-            <div className="text-xs text-gray-500 mt-1 font-mono">
-              {shorten(agent.wallet)}
-            </div>
+            <div className="text-[11px] text-gray-600 mt-0.5 font-mono">{shorten(agent.wallet)}</div>
           </div>
         </div>
 
+        {/* Run button */}
         <div className="text-center mb-6">
           <button
             onClick={runDemo}
             disabled={running}
-            className="px-8 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors shadow-md"
+            className="btn-primary text-sm"
           >
-            {running ? 'Running...' : hasRun ? 'Run again' : '▶ Run Agent Job Demo'}
+            {running ? 'Executing...' : hasRun ? 'Replay Trace' : 'Run Agent Job Demo'}
           </button>
         </div>
 
-        <div className="space-y-2 mb-6">
+        {/* Steps timeline */}
+        <div className="space-y-1.5 mb-6">
           {STEPS.map((step, idx) => {
             const state = stepStates[idx]
             const isActive = state === 'active'
@@ -267,55 +236,50 @@ export default function AgentJobLoopDemo() {
             return (
               <div
                 key={step.id}
-                className={`flex items-start gap-3 p-3 rounded-lg border transition-all ${
+                className={`flex items-start gap-3 p-3 rounded-lg border transition-all duration-200 ${
                   isComplete
-                    ? 'bg-green-50 border-green-200'
+                    ? 'bg-emerald-500/[0.04] border-emerald-500/20'
                     : isActive
-                    ? 'bg-blue-50 border-blue-300 shadow-sm'
-                    : 'bg-gray-50 border-gray-200 opacity-60'
+                    ? 'bg-teal-500/[0.06] border-teal-500/30 glow-active'
+                    : 'bg-white/[0.01] border-white/[0.04] opacity-40'
                 }`}
               >
                 <div
-                  className={`mt-0.5 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
+                  className={`mt-0.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 ${
                     isComplete
-                      ? 'bg-green-500 text-white'
+                      ? 'bg-emerald-500 text-white'
                       : isActive
-                      ? 'bg-blue-500 text-white animate-pulse'
-                      : 'bg-gray-300 text-gray-600'
+                      ? 'bg-teal-400 text-black animate-pulse'
+                      : 'bg-white/[0.06] text-gray-600'
                   }`}
                 >
                   {isComplete ? '✓' : step.id}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <div className="font-medium text-gray-900 text-sm">
+                    <div className={`text-sm font-medium ${isComplete ? 'text-emerald-300' : isActive ? 'text-teal-300' : 'text-gray-500'}`}>
                       {step.title}
                     </div>
-                    <span
-                      className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                        isComplete
-                          ? 'bg-green-100 text-green-800'
-                          : isActive
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'bg-gray-100 text-gray-600'
-                      }`}
-                    >
+                    <span className={`status-pill ${
+                      isComplete ? 'bg-emerald-500/10 text-emerald-400' : isActive ? 'bg-teal-500/10 text-teal-400' : 'bg-white/[0.03] text-gray-600'
+                    }`}>
                       {state}
                     </span>
                   </div>
-                  <div className="text-xs text-gray-600 mt-1">{step.detail}</div>
+                  <div className="text-[11px] text-gray-600 mt-0.5">{step.detail}</div>
                   {step.txLink && isComplete && (
                     <a
                       href={step.txLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-block mt-1 text-xs text-blue-600 hover:text-blue-800 hover:underline"
+                      className="inline-flex items-center gap-1 mt-1 text-[11px] font-mono text-teal-400/80 hover:text-teal-300 transition-colors"
                     >
-                      🔗 {step.txLabel}
+                      <span className="text-emerald-500">&#x2713;</span> {step.txLabel}{' '}
+                      <span className="text-gray-600">{step.txLink.includes('/tx/') ? shortenHash(step.txLink.split('/tx/')[1]) : ''}</span>
                     </a>
                   )}
                   {step.offchain && isComplete && (
-                    <span className="inline-block mt-1 text-xs text-gray-500 italic">
+                    <span className="inline-block mt-1 text-[11px] text-gray-600 italic">
                       Off chain step, no transaction
                     </span>
                   )}
@@ -325,38 +289,43 @@ export default function AgentJobLoopDemo() {
           })}
         </div>
 
-        <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-4 border border-purple-100 flex items-center justify-between flex-wrap gap-2">
-          <div>
-            <div className="text-xs text-gray-500 uppercase tracking-wide">
-              Agent reputation
-            </div>
-            <div className="text-2xl font-bold text-purple-700">
+        {/* Proven flow data + reputation */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+          <div className="bg-white/[0.02] rounded-lg p-4 border border-white/[0.06]">
+            <div className="text-[10px] text-gray-600 uppercase tracking-wider mb-2">Agent Reputation</div>
+            <div className="text-2xl font-bold font-mono text-teal-400">
               {reputationDisplay}
               {hasRun && reputationDisplay > agent.reputation && (
-                <span className="text-sm text-green-600 ml-2 font-medium">
-                  +1
-                </span>
+                <span className="text-sm text-emerald-400 ml-2 font-medium">+1</span>
               )}
             </div>
+            <div className="text-[11px] text-gray-600 mt-1">
+              Read live from ReputationRegistry. Tick is a demo visualisation.
+            </div>
           </div>
-          <div className="text-xs text-gray-500 max-w-xs text-right">
-            On chain reputation read live from ReputationRegistry. Tick is a demo
-            visualisation, the underlying contract is live on HashKey Testnet.
+          <div className="bg-white/[0.02] rounded-lg p-4 border border-white/[0.06]">
+            <div className="text-[10px] text-gray-600 uppercase tracking-wider mb-2">Proven Flow Data</div>
+            <div className="space-y-1 text-[11px]">
+              <div className="flex justify-between"><span className="text-gray-600">Status</span><span className="text-emerald-400 font-mono">Released</span></div>
+              <div className="flex justify-between"><span className="text-gray-600">fundedViaHSP</span><span className="text-teal-400 font-mono">true</span></div>
+              <div className="flex justify-between"><span className="text-gray-600">Reward</span><span className="text-white font-mono">10.0 USDC</span></div>
+              <div className="flex justify-between"><span className="text-gray-600">Reputation</span><span className="text-white font-mono">95/100</span></div>
+            </div>
           </div>
         </div>
 
-        <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between flex-wrap gap-2 text-xs text-gray-500">
+        {/* Footer */}
+        <div className="pt-3 border-t border-white/[0.04] flex items-center justify-between flex-wrap gap-2 text-[11px] text-gray-600">
           <span>
-            Demo simulation. Underlying contracts and HSP flow are live on
-            HashKey Chain Testnet.
+            Demo simulation &middot; Underlying contracts and HSP flow are live on HashKey Chain Testnet
           </span>
           <a
             href={`${EXPLORER_URL}/address/${CONTRACTS.jobEscrow}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
+            className="text-teal-500/70 hover:text-teal-400 font-mono transition-colors"
           >
-            View full lifecycle on explorer →
+            View full lifecycle on explorer
           </a>
         </div>
       </div>

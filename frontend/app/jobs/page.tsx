@@ -2,27 +2,20 @@
 
 import { useState, useEffect } from 'react'
 import { createPublicClient, http, formatUnits } from 'viem'
-import { hashkeyTestnet, CONTRACTS, EXPLORER_URL } from '@/lib/config'
-import { WalletConnect } from '@/lib/wallet'
+import { hashkeyTestnet, CONTRACTS } from '@/lib/config'
+import SiteNav from '@/components/SiteNav'
 import Link from 'next/link'
 import { JOB_ESCROW_ABI } from '@/lib/contracts'
 
 export default function Jobs() {
-  const [jobs, setJobs] = useState<number[]>([])
   const [jobDetails, setJobDetails] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    loadJobs()
-  }, [])
+  useEffect(() => { loadJobs() }, [])
 
   const loadJobs = async () => {
     try {
-      const publicClient = createPublicClient({
-        chain: hashkeyTestnet,
-        transport: http()
-      })
-
+      const publicClient = createPublicClient({ chain: hashkeyTestnet, transport: http() })
       const count = await publicClient.readContract({
         address: CONTRACTS.jobEscrow as `0x${string}`,
         abi: JOB_ESCROW_ABI,
@@ -39,12 +32,11 @@ export default function Jobs() {
             args: [BigInt(i)],
           }) as any
           details.push({ jobId: i, employer: job.employer || job[0], reward: job.reward || job[2], description: job.description || job[3], status: job.status ?? job[5] })
-        } catch (err) {
+        } catch {
           details.push({ jobId: i, employer: '', reward: BigInt(0), description: `Job #${i}`, status: 0 })
         }
       }
       setJobDetails(details)
-      setJobs(Array.from({ length: Number(count) }, (_, i) => i + 1))
     } catch (err) {
       console.error('Failed to load jobs:', err)
     }
@@ -52,62 +44,41 @@ export default function Jobs() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <Link href="/" className="text-xl font-bold text-gray-900">SLAA</Link>
-              <span className="ml-4 text-sm text-gray-500">Job Board</span>
-            </div>
-            <div className="flex items-center gap-4">
-              <Link href="/jobs/create" className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">
-                Post a Job
-              </Link>
-              <WalletConnect />
-            </div>
-          </div>
-        </div>
-      </nav>
-
+    <div className="min-h-screen">
+      <SiteNav current="jobs" />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Job Board</h1>
-          <span className="text-gray-500">{jobs.length} jobs posted</span>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-xl font-bold text-white">Job Board</h1>
+          <span className="text-xs text-gray-600 font-mono">{jobDetails.length} posted</span>
         </div>
 
         {loading ? (
-          <div className="text-center py-12">
-            <p className="text-gray-500">Loading jobs...</p>
-          </div>
+          <div className="card p-8 text-center"><div className="skeleton h-4 w-32 mx-auto" /></div>
         ) : jobDetails.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-xl shadow-md">
-            <p className="text-gray-500 mb-4">No jobs posted yet.</p>
-            <Link href="/jobs/create" className="text-blue-600 hover:text-blue-800 font-medium">
-              Be the first to post a job
-            </Link>
+          <div className="card p-8 text-center">
+            <p className="text-sm text-gray-500 mb-3">No jobs posted yet.</p>
+            <Link href="/jobs/create" className="text-sm text-teal-400 hover:text-teal-300">Be the first to post a job</Link>
           </div>
         ) : (
-          <div className="grid gap-6">
+          <div className="grid gap-2">
             {jobDetails.map((job) => (
               <Link key={job.jobId} href={`/jobs/${job.jobId}`}>
-                <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100 hover:shadow-lg transition-shadow">
+                <div className="card card-hover p-4 transition-all">
                   <div className="flex justify-between items-start">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">{job.description || `Job #${job.jobId}`}</h3>
-                      <p className="text-sm text-gray-500 mt-1">
-                        Reward: {formatUnits(job.reward || BigInt(0), 6)} USDC
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        Employer: {job.employer ? `${job.employer.slice(0, 6)}...${job.employer.slice(-4)}` : 'Unknown'}
-                      </p>
+                      <div className="text-sm font-medium text-gray-200">{job.description || `Job #${job.jobId}`}</div>
+                      <div className="text-xs text-gray-500 mt-0.5 font-mono">
+                        {formatUnits(job.reward || BigInt(0), 6)} USDC
+                      </div>
+                      <div className="text-[11px] text-gray-600 mt-0.5 font-mono">
+                        {job.employer ? `${job.employer.slice(0, 6)}...${job.employer.slice(-4)}` : 'Unknown'}
+                      </div>
                     </div>
-                    <span className={`px-3 py-1 text-sm font-medium rounded-full ${
-                      Number(job.status) === 0 ? 'bg-yellow-100 text-yellow-800' :
-                      Number(job.status) === 1 ? 'bg-blue-100 text-blue-800' :
-                      Number(job.status) === 2 ? 'bg-purple-100 text-purple-800' :
-                      Number(job.status) === 4 ? 'bg-green-100 text-green-800' :
-                      'bg-gray-100 text-gray-800'
+                    <span className={`status-pill ${
+                      Number(job.status) === 4 ? 'bg-emerald-500/10 text-emerald-400' :
+                      Number(job.status) >= 1 ? 'bg-teal-500/10 text-teal-400' :
+                      Number(job.status) === 0 ? 'bg-amber-500/10 text-amber-400' :
+                      'bg-white/[0.04] text-gray-500'
                     }`}>
                       {['Created','Funded','Accepted','Submitted','Released','Disputed','Cancelled'][Number(job.status)] || 'Unknown'}
                     </span>

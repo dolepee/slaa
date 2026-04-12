@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { createWalletClient, custom } from 'viem'
 import { hashkeyTestnet, CONTRACTS } from '@/lib/config'
-import Link from 'next/link'
+import SiteNav from '@/components/SiteNav'
 import { AGENT_REGISTRY_ABI } from '@/lib/contracts'
 
 export default function RegisterAgent() {
@@ -19,19 +19,10 @@ export default function RegisterAgent() {
     setIsLoading(true)
     setError(null)
     setTxHash(null)
-
     try {
-      if (!window.ethereum) {
-        throw new Error('Please install MetaMask')
-      }
-
+      if (!window.ethereum) throw new Error('Please install MetaMask')
       const [address] = await window.ethereum.request({ method: 'eth_requestAccounts' })
-      const walletClient = createWalletClient({
-        account: address as `0x${string}`,
-        chain: hashkeyTestnet,
-        transport: custom(window.ethereum)
-      })
-
+      const walletClient = createWalletClient({ account: address as `0x${string}`, chain: hashkeyTestnet, transport: custom(window.ethereum) })
       const hash = await walletClient.writeContract({
         account: address as `0x${string}`,
         address: CONTRACTS.agentRegistry as `0x${string}`,
@@ -39,7 +30,6 @@ export default function RegisterAgent() {
         functionName: 'mintAgent',
         args: [name, capabilities, endpoint],
       })
-
       setTxHash(hash)
     } catch (err: any) {
       setError(err.message || 'Transaction failed')
@@ -48,112 +38,87 @@ export default function RegisterAgent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <Link href="/" className="text-xl font-bold text-gray-900">SLAA</Link>
-              <span className="ml-4 text-sm text-gray-500">Register Agent</span>
-            </div>
-            <Link href="/marketplace" className="text-sm text-gray-600 hover:text-gray-900">
-              Back to Marketplace
-            </Link>
-          </div>
-        </div>
-      </nav>
-
+    <div className="min-h-screen">
+      <SiteNav current="register" />
       <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-xl shadow-md p-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Register Your Agent</h1>
-          <p className="text-gray-600 mb-6">
-            Create an on-chain identity for your AI agent. Agents can accept jobs and receive payments.
+        <div className="card p-6 sm:p-8">
+          <h1 className="text-xl font-bold text-white mb-1">Register Your Agent</h1>
+          <p className="text-sm text-gray-500 mb-6">
+            Create an on chain identity for your AI agent. Agents can accept jobs and receive payments.
           </p>
-          
-          <form onSubmit={handleSubmit} className="space-y-6">
+
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Agent Name
-              </label>
+              <label className="block text-xs font-medium text-gray-400 mb-1.5">Agent Name</label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Research Agent Alpha"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="input-dark w-full"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Capabilities
-              </label>
+              <label className="block text-xs font-medium text-gray-400 mb-1.5">Capabilities</label>
               <input
                 type="text"
                 value={capabilities}
                 onChange={(e) => setCapabilities(e.target.value)}
                 placeholder="data-scraping, analysis, reporting"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="input-dark w-full"
                 required
               />
-              <p className="mt-1 text-sm text-gray-500">
-                Comma-separated list of what your agent can do
-              </p>
+              <p className="mt-1 text-[11px] text-gray-600">Comma separated list of what your agent can do</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                API Endpoint
-              </label>
+              <label className="block text-xs font-medium text-gray-400 mb-1.5">API Endpoint</label>
               <input
                 type="url"
                 value={endpoint}
                 onChange={(e) => setEndpoint(e.target.value)}
                 placeholder="https://api.agent.com/your-agent"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="input-dark w-full font-mono text-sm"
                 required
               />
-              <p className="mt-1 text-sm text-gray-500">
-                URL where the agent can be reached
-              </p>
+              <p className="mt-1 text-[11px] text-gray-600">URL where the agent can be reached</p>
             </div>
 
             {error && (
-              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-800 text-sm">{error}</p>
+              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                <p className="text-red-400 text-sm">{error}</p>
               </div>
             )}
 
-            <div className="pt-4">
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-              >
-                {isLoading ? 'Waiting for wallet...' : 'Register Agent'}
-              </button>
-            </div>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="btn-primary w-full"
+            >
+              {isLoading ? 'Waiting for wallet...' : 'Register Agent'}
+            </button>
 
             {txHash && (
-              <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                <p className="text-green-800 font-medium">Transaction submitted!</p>
-                <a 
+              <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+                <p className="text-emerald-400 font-medium text-sm">Transaction submitted!</p>
+                <a
                   href={`${hashkeyTestnet.blockExplorers?.default?.url}/tx/${txHash}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-green-600 hover:text-green-800 text-sm"
+                  className="text-teal-500/60 hover:text-teal-400 text-xs font-mono"
                 >
-                  View on Explorer →
+                  View on Explorer
                 </a>
               </div>
             )}
           </form>
         </div>
 
-        <div className="mt-6 p-4 bg-purple-50 rounded-lg">
-          <h3 className="font-medium text-purple-900 mb-2">What you get:</h3>
-          <ul className="text-sm text-purple-800 space-y-1 list-disc list-inside">
+        <div className="card p-4 mt-4">
+          <h3 className="text-xs font-semibold text-gray-300 mb-2 uppercase tracking-wider">What you get</h3>
+          <ul className="text-xs text-gray-500 space-y-1 list-disc list-inside">
             <li>Unique agent NFT identity on HashKey Chain</li>
             <li>Reputation scores from completed jobs</li>
             <li>Direct USDC payments via escrow</li>

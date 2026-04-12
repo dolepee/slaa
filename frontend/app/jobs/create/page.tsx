@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { createWalletClient, createPublicClient, http, custom, parseEventLogs, parseUnits } from 'viem'
 import { hashkeyTestnet, CONTRACTS } from '@/lib/config'
-import { WalletConnect } from '@/lib/wallet'
+import SiteNav from '@/components/SiteNav'
 import Link from 'next/link'
 import { JOB_ESCROW_ABI, USDC_ABI } from '@/lib/contracts'
 
@@ -28,25 +28,15 @@ export default function CreateJob() {
     setHspPaymentUrl(null)
 
     try {
-      if (!window.ethereum) {
-        throw new Error('Please install MetaMask')
-      }
+      if (!window.ethereum) throw new Error('Please install MetaMask')
 
       const [address] = await window.ethereum.request({ method: 'eth_requestAccounts' })
-      const walletClient = createWalletClient({
-        account: address as `0x${string}`,
-        chain: hashkeyTestnet,
-        transport: custom(window.ethereum)
-      })
-      const publicClient = createPublicClient({
-        chain: hashkeyTestnet,
-        transport: http()
-      })
+      const walletClient = createWalletClient({ account: address as `0x${string}`, chain: hashkeyTestnet, transport: custom(window.ethereum) })
+      const publicClient = createPublicClient({ chain: hashkeyTestnet, transport: http() })
 
       const rewardInWei = parseUnits(reward, 6)
       const deadlineSeconds = BigInt(parseInt(deadline) * 24 * 60 * 60)
 
-      // Step 1: Create job on-chain
       setStatusMsg('Creating job on chain...')
       const createHash = await walletClient.writeContract({
         account: address as `0x${string}`,
@@ -57,27 +47,15 @@ export default function CreateJob() {
       })
       const createReceipt = await publicClient.waitForTransactionReceipt({ hash: createHash })
 
-      const createdLogs = parseEventLogs({
-        abi: JOB_ESCROW_ABI,
-        eventName: 'JobCreated',
-        logs: createReceipt.logs,
-        strict: false,
-      })
-
+      const createdLogs = parseEventLogs({ abi: JOB_ESCROW_ABI, eventName: 'JobCreated', logs: createReceipt.logs, strict: false })
       let newJobId = createdLogs[0]?.args?.jobId ?? null
       if (!newJobId) {
-        const totalJobs = await publicClient.readContract({
-          address: CONTRACTS.jobEscrow as `0x${string}`,
-          abi: JOB_ESCROW_ABI,
-          functionName: 'totalJobs',
-        }) as bigint
+        const totalJobs = await publicClient.readContract({ address: CONTRACTS.jobEscrow as `0x${string}`, abi: JOB_ESCROW_ABI, functionName: 'totalJobs' }) as bigint
         newJobId = totalJobs
       }
-
       setCreatedJobId(newJobId)
 
       if (fundingMethod === 'direct') {
-        // Direct USDC: approve + fundJob
         setStatusMsg('Job created! Approving USDC...')
         const approveHash = await walletClient.writeContract({
           account: address as `0x${string}`,
@@ -97,28 +75,19 @@ export default function CreateJob() {
           args: [newJobId],
         })
         await publicClient.waitForTransactionReceipt({ hash: fundHash })
-
         setStatusMsg('Done!')
         setTxHash(fundHash)
       } else {
-        // HSP payment flow
         setStatusMsg('Job created! Initiating HSP payment...')
-
         const res = await fetch('/api/hsp/create-order', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ jobId: Number(newJobId), rewardUSDC: reward }),
         })
-
         const data = await res.json()
-        if (!data.success) {
-          throw new Error(data.error || 'Failed to create HSP order')
-        }
-
+        if (!data.success) throw new Error(data.error || 'Failed to create HSP order')
         setStatusMsg('Redirecting to HSP checkout...')
         setHspPaymentUrl(data.paymentUrl)
-
-        // Redirect to HSP checkout
         window.location.href = data.paymentUrl
       }
     } catch (err: any) {
@@ -128,47 +97,27 @@ export default function CreateJob() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <Link href="/" className="text-xl font-bold text-gray-900">SLAA</Link>
-              <span className="ml-4 text-sm text-gray-500">Post a Job</span>
-            </div>
-            <div className="flex items-center gap-4">
-              <Link href="/jobs" className="text-sm text-gray-600 hover:text-gray-900">
-                Back to Jobs
-              </Link>
-              <WalletConnect />
-            </div>
-          </div>
-        </div>
-      </nav>
-
+    <div className="min-h-screen">
+      <SiteNav current="create" />
       <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-xl shadow-md p-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">Post a New Job</h1>
+        <div className="card p-6 sm:p-8">
+          <h1 className="text-xl font-bold text-white mb-6">Post a New Job</h1>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Job Description
-              </label>
+              <label className="block text-xs font-medium text-gray-400 mb-1.5">Job Description</label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Describe the task you need completed..."
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="input-dark w-full"
                 rows={4}
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Reward (USDC)
-              </label>
+              <label className="block text-xs font-medium text-gray-400 mb-1.5">Reward (USDC)</label>
               <input
                 type="number"
                 value={reward}
@@ -176,18 +125,14 @@ export default function CreateJob() {
                 placeholder="50.00"
                 step="0.01"
                 min="1"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="input-dark w-full font-mono"
                 required
               />
-              <p className="mt-1 text-sm text-gray-500">
-                Amount in USDC that will be held in escrow
-              </p>
+              <p className="mt-1 text-[11px] text-gray-600">Amount in USDC held in escrow</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Deadline (days)
-              </label>
+              <label className="block text-xs font-medium text-gray-400 mb-1.5">Deadline (days)</label>
               <input
                 type="number"
                 value={deadline}
@@ -195,110 +140,96 @@ export default function CreateJob() {
                 placeholder="7"
                 min="1"
                 max="90"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="input-dark w-full font-mono"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                Funding Method
-              </label>
+              <label className="block text-xs font-medium text-gray-400 mb-2">Funding Method</label>
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
                   onClick={() => setFundingMethod('direct')}
-                  className={`p-4 rounded-lg border-2 text-left transition-colors ${
+                  className={`p-3 rounded-lg border text-left transition-all ${
                     fundingMethod === 'direct'
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300'
+                      ? 'border-teal-500/40 bg-teal-500/[0.06]'
+                      : 'border-white/[0.06] bg-white/[0.02] hover:border-white/[0.1]'
                   }`}
                 >
-                  <div className="font-medium text-gray-900">Direct USDC</div>
-                  <div className="text-xs text-gray-500 mt-1">Approve and transfer USDC directly to escrow</div>
+                  <div className="text-sm font-medium text-gray-200">Direct USDC</div>
+                  <div className="text-[11px] text-gray-600 mt-0.5">Approve and transfer to escrow</div>
                 </button>
                 <button
                   type="button"
                   onClick={() => setFundingMethod('hsp')}
-                  className={`p-4 rounded-lg border-2 text-left transition-colors ${
+                  className={`p-3 rounded-lg border text-left transition-all ${
                     fundingMethod === 'hsp'
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300'
+                      ? 'border-teal-500/40 bg-teal-500/[0.06]'
+                      : 'border-white/[0.06] bg-white/[0.02] hover:border-white/[0.1]'
                   }`}
                 >
-                  <div className="font-medium text-gray-900">HSP Checkout</div>
-                  <div className="text-xs text-gray-500 mt-1">Pay via HashKey Settlement Protocol</div>
+                  <div className="text-sm font-medium text-gray-200">HSP Checkout</div>
+                  <div className="text-[11px] text-gray-600 mt-0.5">Pay via HashKey Settlement Protocol</div>
                 </button>
               </div>
             </div>
 
             {error && (
-              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-800 text-sm">{error}</p>
+              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                <p className="text-red-400 text-sm">{error}</p>
               </div>
             )}
 
-            <div className="pt-4">
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-              >
-                {isLoading ? statusMsg || 'Processing...' : fundingMethod === 'hsp' ? 'Create Job & Pay via HSP' : 'Create Job & Fund with USDC'}
-              </button>
-            </div>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="btn-primary w-full"
+            >
+              {isLoading ? statusMsg || 'Processing...' : fundingMethod === 'hsp' ? 'Create Job & Pay via HSP' : 'Create Job & Fund with USDC'}
+            </button>
 
             {txHash && (
-              <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                <p className="text-green-800 font-medium">Job created and funded successfully!</p>
+              <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+                <p className="text-emerald-400 font-medium text-sm">Job created and funded!</p>
                 {createdJobId && (
-                  <Link href={`/jobs/${createdJobId.toString()}`} className="block mt-2 text-green-600 hover:text-green-800 text-sm">
-                    View job #{createdJobId.toString()} &rarr;
+                  <Link href={`/jobs/${createdJobId.toString()}`} className="block mt-1 text-emerald-500/70 hover:text-emerald-400 text-xs font-mono">
+                    View job #{createdJobId.toString()}
                   </Link>
                 )}
                 <a
                   href={`${hashkeyTestnet.blockExplorers?.default?.url}/tx/${txHash}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-green-600 hover:text-green-800 text-sm"
+                  className="text-teal-500/60 hover:text-teal-400 text-xs font-mono"
                 >
-                  View on Explorer &rarr;
+                  View on Explorer
                 </a>
-                <Link href="/jobs" className="block mt-2 text-green-600 hover:text-green-800 text-sm">
-                  View all jobs &rarr;
-                </Link>
               </div>
             )}
 
             {hspPaymentUrl && !txHash && (
-              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-blue-800 font-medium">HSP order created. Redirecting to checkout...</p>
-                {createdJobId && (
-                  <p className="text-blue-700 text-sm mt-1">Job #{createdJobId.toString()} will be funded once payment completes.</p>
-                )}
-                <a
-                  href={hspPaymentUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block mt-2 text-blue-600 hover:text-blue-800 text-sm underline"
-                >
-                  Open HSP checkout manually &rarr;
+              <div className="p-3 bg-teal-500/10 border border-teal-500/20 rounded-lg">
+                <p className="text-teal-400 font-medium text-sm">HSP order created. Redirecting...</p>
+                {createdJobId && <p className="text-teal-500/70 text-xs mt-1 font-mono">Job #{createdJobId.toString()} funded on checkout completion.</p>}
+                <a href={hspPaymentUrl} target="_blank" rel="noopener noreferrer" className="block mt-1 text-teal-500/60 hover:text-teal-400 text-xs underline font-mono">
+                  Open HSP checkout manually
                 </a>
               </div>
             )}
           </form>
         </div>
 
-        <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-          <h3 className="font-medium text-blue-900 mb-2">How it works:</h3>
-          <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
+        <div className="card p-4 mt-4">
+          <h3 className="text-xs font-semibold text-gray-300 mb-2 uppercase tracking-wider">How it works</h3>
+          <ol className="text-xs text-gray-500 space-y-1 list-decimal list-inside">
             <li>Create job and fund with USDC (direct or via HSP)</li>
             <li>Agent accepts the job</li>
             <li>Agent submits work with deliverable</li>
             <li>You validate and release payment</li>
           </ol>
-          <p className="mt-3 text-sm text-blue-700">
-            <strong>HSP Checkout</strong> routes payment through the HashKey Settlement Protocol for compliant on chain settlement.
+          <p className="mt-2 text-[11px] text-gray-600">
+            <span className="text-teal-500/70 font-medium">HSP Checkout</span> routes payment through the HashKey Settlement Protocol for compliant on chain settlement.
           </p>
         </div>
       </main>

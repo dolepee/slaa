@@ -3,26 +3,19 @@
 import { useState, useEffect } from 'react'
 import { createPublicClient, http } from 'viem'
 import { hashkeyTestnet, CONTRACTS, EXPLORER_URL } from '@/lib/config'
-import { WalletConnect } from '@/lib/wallet'
+import SiteNav from '@/components/SiteNav'
 import Link from 'next/link'
 import { AGENT_REGISTRY_ABI } from '@/lib/contracts'
 
 export default function Marketplace() {
-  const [agents, setAgents] = useState<number[]>([])
   const [agentProfiles, setAgentProfiles] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    loadAgents()
-  }, [])
+  useEffect(() => { loadAgents() }, [])
 
   const loadAgents = async () => {
     try {
-      const publicClient = createPublicClient({
-        chain: hashkeyTestnet,
-        transport: http()
-      })
-
+      const publicClient = createPublicClient({ chain: hashkeyTestnet, transport: http() })
       const count = await publicClient.readContract({
         address: CONTRACTS.agentRegistry as `0x${string}`,
         abi: AGENT_REGISTRY_ABI,
@@ -39,12 +32,11 @@ export default function Marketplace() {
             args: [BigInt(i)],
           }) as any
           profiles.push({ tokenId: i, name: profile.name || profile[0], capabilities: profile.capabilities || profile[1], endpoint: profile.endpoint || profile[2], wallet: profile.wallet || profile[3], totalJobs: profile.totalJobs || profile[4], completedJobs: profile.completedJobs || profile[5] })
-        } catch (err) {
+        } catch {
           profiles.push({ tokenId: i, name: `Agent #${i}`, capabilities: 'Unknown', endpoint: '', wallet: '', totalJobs: BigInt(0), completedJobs: BigInt(0) })
         }
       }
       setAgentProfiles(profiles)
-      setAgents(Array.from({ length: Number(count) }, (_, i) => i + 1))
     } catch (err) {
       console.error('Failed to load agents:', err)
     }
@@ -52,60 +44,40 @@ export default function Marketplace() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <Link href="/" className="text-xl font-bold text-gray-900">SLAA</Link>
-              <span className="ml-4 text-sm text-gray-500">Agent Marketplace</span>
-            </div>
-            <div className="flex items-center gap-4">
-              <Link href="/agents/register" className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">
-                Register Agent
-              </Link>
-              <WalletConnect />
-            </div>
-          </div>
-        </div>
-      </nav>
-
+    <div className="min-h-screen">
+      <SiteNav current="agents" />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Agent Marketplace</h1>
-          <span className="text-gray-500">{agents.length} agents registered</span>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-xl font-bold text-white">Agent Marketplace</h1>
+          <span className="text-xs text-gray-600 font-mono">{agentProfiles.length} registered</span>
         </div>
 
         {loading ? (
-          <div className="text-center py-12">
-            <p className="text-gray-500">Loading agents...</p>
-          </div>
+          <div className="card p-8 text-center"><div className="skeleton h-4 w-32 mx-auto" /></div>
         ) : agentProfiles.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-xl shadow-md">
-            <p className="text-gray-500 mb-4">No agents registered yet.</p>
-            <Link href="/agents/register" className="text-blue-600 hover:text-blue-800 font-medium">
-              Be the first to register
-            </Link>
+          <div className="card p-8 text-center">
+            <p className="text-sm text-gray-500 mb-3">No agents registered yet.</p>
+            <Link href="/agents/register" className="text-sm text-teal-400 hover:text-teal-300">Be the first to register</Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {agentProfiles.map((agent) => (
-              <div key={agent.tokenId} className="bg-white rounded-xl shadow-md p-6 border border-gray-100">
+              <div key={agent.tokenId} className="card card-hover p-4 transition-all">
                 <div className="flex items-start justify-between">
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900">{agent.name}</h3>
-                    <p className="text-sm text-gray-500 mt-1">{agent.capabilities}</p>
+                    <div className="text-sm font-semibold text-gray-200">{agent.name}</div>
+                    <div className="text-xs text-gray-500 mt-0.5">{agent.capabilities}</div>
                   </div>
-                  <span className="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
+                  <span className="text-[11px] font-mono text-teal-400/60 bg-teal-500/[0.06] px-1.5 py-0.5 rounded">
                     #{agent.tokenId}
                   </span>
                 </div>
-                <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center">
-                  <span className="text-sm text-gray-500">
-                    {Number(agent.completedJobs)}/{Number(agent.totalJobs)} jobs completed
+                <div className="mt-3 pt-3 border-t border-white/[0.04] flex justify-between items-center">
+                  <span className="text-xs text-gray-600 font-mono">
+                    {Number(agent.completedJobs)}/{Number(agent.totalJobs)} completed
                   </span>
-                  <a href={`${EXPLORER_URL}/address/${agent.wallet}`} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:text-blue-800">
-                    View Wallet
+                  <a href={`${EXPLORER_URL}/address/${agent.wallet}`} target="_blank" rel="noopener noreferrer" className="text-[11px] text-teal-500/60 hover:text-teal-400 font-mono transition-colors">
+                    Wallet
                   </a>
                 </div>
               </div>
