@@ -123,7 +123,7 @@ describe("JobEscrow", function () {
 
     // HSP deposits USDC directly to the escrow contract
     await usdc.mint(await jobEscrow.getAddress(), JOB_REWARD);
-    await jobEscrow.connect(owner).confirmHSPFunding(1, "test-mandate-id");
+    await jobEscrow.connect(owner).confirmHSPFunding(1, "test-mandate-id", "0xhsp-payment-release");
 
     await jobEscrow.connect(agentOwner).acceptJob(1, 1);
     await jobEscrow.connect(agentOwner).submitWork(1, "ipfs://QmTest");
@@ -174,7 +174,7 @@ describe("JobEscrow", function () {
     await jobEscrow.connect(employer).createJob("HSP refund job", JOB_REWARD, 7 * 24 * 60 * 60);
 
     await usdc.mint(await jobEscrow.getAddress(), JOB_REWARD);
-    await jobEscrow.connect(owner).confirmHSPFunding(1, "test-hsp-refund");
+    await jobEscrow.connect(owner).confirmHSPFunding(1, "test-hsp-refund", "0xhsp-payment-refund");
 
     const balanceBefore = await usdc.balanceOf(employer.address);
     await jobEscrow.connect(employer).cancelJob(1);
@@ -194,5 +194,63 @@ describe("JobEscrow", function () {
     const profile = await agentRegistry.getAgentProfile(1);
     expect(profile.totalJobs).to.equal(1);
     expect(profile.completedJobs).to.equal(1);
+  });
+
+  it("Should reject HSP funding confirmation without unallocated escrow balance", async function () {
+    await jobEscrow.connect(employer).createJob("HSP underfunded job", JOB_REWARD, 7 * 24 * 60 * 60);
+
+    await expect(
+      jobEscrow.connect(owner).confirmHSPFunding(1, "test-underfunded", "0xmissing-payment")
+    ).to.be.revertedWith("Escrow missing unallocated funds");
+  });
+
+  it("Should refund accepted jobs after deadline", async function () {
+    await jobEscrow.connect(employer).createJob("Expiring job", JOB_REWARD, 60);
+    await usdc.connect(employer).approve(await jobEscrow.getAddress(), JOB_REWARD);
+    await jobEscrow.connect(employer).fundJob(1);
+    await jobEscrow.connect(agentOwner).acceptJob(1, 1);
+
+    await ethers.provider.send("evm_increaseTime", [61]);
+    await ethers.provider.send("evm_mine", []);
+
+    const balanceBefore = await usdc.balanceOf(employer.address);
+    await jobEscrow.connect(employer).refundAfterDeadline(1);
+    const balanceAfter = await usdc.balanceOf(employer.address);
+    const job = await jobEscrow.getJob(1);
+
+    expect(balanceAfter - balanceBefore).to.equal(JOB_REWARD);
+    expect(job.status).to.equal(6); // Cancelled
+    expect(job.fundedAmount).to.equal(0);
+  });
+
+  it("Should resolve disputes with a full balance split", async function () {
+    await jobEscrow.connect(employer).createJob("Disputed job", JOB_REWARD, 7 * 24 * 60 * 60);
+    await usdc.connect(employer).approve(await jobEscrow.getAddress(), JOB_REWARD);
+    await jobEscrow.connect(employer).fundJob(1);
+    await jobEscrow.connect(agentOwner).acceptJob(1, 1);
+    await jobEscrow.connect(agentOwner).submitWork(1, "ipfs://QmTest");
+    await jobEscrow.connect(employer).raiseDispute(1, "Needs arbitration");
+
+    const employerRefund = ethers.parseUnits("40", 6);
+    const agentPayout = ethers.parseUnits("60", 6);
+    const employerBalanceBefore = await usdc.balanceOf(employer.address);
+    const agentBalanceBefore = await usdc.balanceOf(agentOwner.address);
+
+    await jobEscrow.connect(owner).resolveDispute(
+      1,
+      employerRefund,
+      agentPayout,
+      70,
+      "Partial delivery accepted"
+    );
+
+    const employerBalanceAfter = await usdc.balanceOf(employer.address);
+    const agentBalanceAfter = await usdc.balanceOf(agentOwner.address);
+    const job = await jobEscrow.getJob(1);
+
+    expect(employerBalanceAfter - employerBalanceBefore).to.equal(employerRefund);
+    expect(agentBalanceAfter - agentBalanceBefore).to.equal(agentPayout);
+    expect(job.status).to.equal(4); // Released
+    expect(job.fundedAmount).to.equal(0);
   });
 });

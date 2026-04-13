@@ -22,7 +22,8 @@ export default function Marketplace() {
       for (let i = 1; i <= Number(count); i++) {
         try {
           const profile = await publicClient.readContract({ address: CONTRACTS.agentRegistry as `0x${string}`, abi: AGENT_REGISTRY_ABI, functionName: 'getAgentProfile', args: [BigInt(i)] }) as any
-          profiles.push({ tokenId: i, name: profile.name || profile[0], capabilities: profile.capabilities || profile[1], endpoint: profile.endpoint || profile[2], wallet: profile.wallet || profile[3], totalJobs: profile.totalJobs || profile[4], completedJobs: profile.completedJobs || profile[5] })
+          const owner = await publicClient.readContract({ address: CONTRACTS.agentRegistry as `0x${string}`, abi: AGENT_REGISTRY_ABI, functionName: 'ownerOf', args: [BigInt(i)] }) as string
+          profiles.push({ tokenId: i, name: profile.name || profile[0], capabilities: profile.capabilities || profile[1], endpoint: profile.endpoint || profile[2], wallet: owner, registeredWallet: profile.wallet || profile[3], totalJobs: profile.totalJobs || profile[4], completedJobs: profile.completedJobs || profile[5] })
         } catch { profiles.push({ tokenId: i, name: `Agent #${i}`, capabilities: 'Unknown', endpoint: '', wallet: '', totalJobs: BigInt(0), completedJobs: BigInt(0) }) }
       }
       setAgentProfiles(profiles)

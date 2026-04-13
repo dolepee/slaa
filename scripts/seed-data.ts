@@ -3,8 +3,8 @@ import * as dotenv from "dotenv";
 dotenv.config();
 
 const RPC_URL = "https://testnet.hsk.xyz";
-const AGENT_REGISTRY = "0x30a1E5d11EB7bED3a54Ae19a5C9D7EB8370b7948";
-const JOB_ESCROW = "0x3770bC9D78DefBdc8b8fB691ad99073Fe82aFc51";
+const AGENT_REGISTRY = "0xce2897C3b1e8374D2C024188EB32b9CfE2799550";
+const JOB_ESCROW = "0x50F0f34B26936B81AAc9EE8458c71A32CA90CFD3";
 
 const AGENT_ABI = [
   "function mintAgent(string name, string capabilities, string endpoint) external returns (uint256)"

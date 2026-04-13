@@ -1,9 +1,9 @@
 import { ethers } from "hardhat";
 
 const USDC = "0x8FE3cB719Ee4410E236Cd6b72ab1fCDC06eF53c6";
-const AGENT_REGISTRY = "0x30a1E5d11EB7bED3a54Ae19a5C9D7EB8370b7948";
-const REPUTATION_REGISTRY = "0x1DbBa2cC54194Ca359Efe4eEDabe0722b966867F";
-const JOB_ESCROW = "0x3770bC9D78DefBdc8b8fB691ad99073Fe82aFc51";
+const AGENT_REGISTRY = "0xce2897C3b1e8374D2C024188EB32b9CfE2799550";
+const REPUTATION_REGISTRY = "0x9A64e6695Acaf0fb4c7489aead2d635d20A6B1b0";
+const JOB_ESCROW = "0x50F0f34B26936B81AAc9EE8458c71A32CA90CFD3";
 
 async function main() {
   const [deployer, employer, agentOwner] = await ethers.getSigners();

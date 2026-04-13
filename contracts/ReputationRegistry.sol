@@ -12,6 +12,7 @@ contract ReputationRegistry {
     mapping(address => ReputationSignal[]) public reputationHistory;
     mapping(address => uint256) public averageReputation;
     mapping(address => uint256) public totalReviews;
+    mapping(address => uint256) public totalReputationScore;
 
     address public jobEscrow;
     address public owner;
@@ -51,18 +52,11 @@ contract ReputationRegistry {
             timestamp: block.timestamp
         }));
 
-        _updateAverage(agent);
-        emit ReputationPosted(agent, employer, score, jobId);
-    }
+        totalReputationScore[agent] += score;
+        totalReviews[agent] += 1;
+        averageReputation[agent] = totalReputationScore[agent] / totalReviews[agent];
 
-    function _updateAverage(address agent) internal {
-        ReputationSignal[] storage history = reputationHistory[agent];
-        uint256 total = 0;
-        for (uint256 i = 0; i < history.length; i++) {
-            total += history[i].score;
-        }
-        averageReputation[agent] = total / history.length;
-        totalReviews[agent] = history.length;
+        emit ReputationPosted(agent, employer, score, jobId);
     }
 
     function getReputation(address agent) external view returns (uint256 average, uint256 reviews) {

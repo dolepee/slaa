@@ -117,6 +117,11 @@ export async function POST(req: Request) {
         return NextResponse.json({ code: 1, msg: 'Token mismatch' }, { status: 400 })
       }
 
+      if (typeof tx_signature !== 'string' || tx_signature.trim().length === 0) {
+        console.error(`HSP webhook: missing payment reference for job ${jobId}`)
+        return NextResponse.json({ code: 1, msg: 'Missing payment reference' }, { status: 400 })
+      }
+
       // Call JobEscrow.confirmHSPFunding on-chain
       try {
         const account = privateKeyToAccount(DEPLOYER_KEY as `0x${string}`)
@@ -130,7 +135,7 @@ export async function POST(req: Request) {
           address: CONTRACTS.jobEscrow as `0x${string}`,
           abi: JOB_ESCROW_ABI,
           functionName: 'confirmHSPFunding',
-          args: [BigInt(jobId), cart_mandate_id],
+          args: [BigInt(jobId), cart_mandate_id, tx_signature],
         })
 
         console.log(`confirmHSPFunding tx submitted: ${txHash}`)

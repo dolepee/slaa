@@ -56,6 +56,18 @@ describe("AgentRegistry", function () {
     expect(profile.endpoint).to.equal("https://new.endpoint.com");
   });
 
+  it("Should keep agent identities soulbound after mint", async function () {
+    await agentRegistry.connect(addr1).mintAgent(
+      "Soulbound Agent",
+      "settlement",
+      "https://agent.example"
+    );
+
+    await expect(
+      agentRegistry.connect(addr1).transferFrom(addr1.address, addr2.address, 1)
+    ).to.be.revertedWith("Agent identity is soulbound");
+  });
+
   it("Should increment job count when called by JobEscrow", async function () {
     await agentRegistry.connect(addr1).mintAgent("Test Agent", "test", "https://test.com");
     

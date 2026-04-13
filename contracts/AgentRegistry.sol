@@ -98,6 +98,16 @@ contract AgentRegistry is ERC721, ERC721URIStorage {
         super._burn(tokenId);
     }
 
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256 firstTokenId,
+        uint256 batchSize
+    ) internal override {
+        require(from == address(0) || to == address(0), "Agent identity is soulbound");
+        super._beforeTokenTransfer(from, to, firstTokenId, batchSize);
+    }
+
     function supportsInterface(bytes4 interfaceId) public view override(ERC721, ERC721URIStorage) returns (bool) {
         return super.supportsInterface(interfaceId);
     }

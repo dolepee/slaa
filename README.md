@@ -11,7 +11,7 @@ AI agents are becoming economically capable, but they lack the financial infrast
 
 ## Solution
 
-SLAA gives AI agents three things they need to participate in the economy: an ERC-721 identity NFT, a USDC escrow system for trustless payments, and an on chain reputation registry that tracks completed work. The protocol now integrates the HashKey Settlement Protocol (HSP) Cart Mandate flow for compliant checkout and webhook-driven funding confirmation on testnet, and that flow has now been proven end to end.
+SLAA gives AI agents three things they need to participate in the economy: a non-transferable ERC-721 identity NFT, a per-job accounted USDC escrow system for trust-minimized payments, and an on chain reputation registry that tracks completed work. The protocol integrates the HashKey Settlement Protocol (HSP) Cart Mandate flow for compliant checkout and webhook-driven funding confirmation on testnet.
 
 ## Try It Instantly
 
@@ -33,7 +33,7 @@ The full HSP-backed PayFi lifecycle has been executed successfully on HashKey Ch
 
 1. HSP order created and checkout URL generated
 2. Payment completed and settled on chain into the escrow contract
-3. `JobEscrow.confirmHSPFunding()` executed successfully
+3. `JobEscrow.confirmHSPFunding()` executed successfully with a job-bound payment reference
 4. Agent accepted the funded job
 5. Agent submitted the deliverable CID
 6. Employer validated the work and released USDC to the agent
@@ -57,11 +57,12 @@ The seven step hero demo on the landing page links each animated step to one of 
 2. Employer creates a job with a USDC reward and deadline.
 3. Employer funds the job. Two paths available:
    a. **Direct USDC transfer** into the escrow contract.
-   b. **HSP Cart Mandate flow**: backend creates an HSP order, employer signs authorization via HSP checkout, HSP settles payment to the escrow contract, and the app confirms funding on chain.
+   b. **HSP Cart Mandate flow**: the configured HSP proxy creates an HSP order, employer signs authorization via HSP checkout, HSP settles payment to the escrow contract, and the app confirms funding on chain only when the escrow has enough unallocated USDC for that specific job.
 4. Agent accepts the job.
 5. Agent submits deliverable, providing an IPFS CID for the completed work.
 6. Employer validates the work and sets a reputation score from 0 to 100.
-7. USDC is released to the agent wallet, and the reputation score is recorded on chain.
+7. USDC is released from that job's accounted balance to the agent wallet, and the reputation score is recorded on chain.
+8. If work stalls, the employer can refund after the deadline. If work is disputed, the protocol owner can resolve the dispute with an explicit employer/agent split.
 
 ## Architecture
 
@@ -84,16 +85,16 @@ Smart Contracts (HashKey Chain Testnet)
 
 ## HSP Integration
 
-The HashKey Settlement Protocol (HSP) provides compliant payment rails for on chain transactions. SLAA now integrates HSP through the Cart Mandate flow. The backend signs a merchant authorization JWT, creates the HSP order over the merchant API, and supports signed `payment-successful` webhook handling for funding confirmation on chain.
+The HashKey Settlement Protocol (HSP) provides compliant payment rails for on chain transactions. SLAA integrates HSP through the Cart Mandate flow. In this repository, `POST /api/hsp/create-order` delegates live order creation to the configured `HSP_PROXY_URL`; this keeps merchant credentials out of the Vercel frontend project and makes the external dependency explicit. The in-repo webhook verifies signed `payment-successful` callbacks, checks amount/token/job status, requires a non-empty payment reference, and confirms funding on chain only if the escrow contract holds enough unallocated USDC for that job.
 
 Live HSP testnet flow:
 
-1. Backend signs a Cart Mandate with the merchant private key (ES256K JWT)
-2. Backend POSTs to HSP gateway (`/api/v1/merchant/orders`)
+1. Configured HSP proxy signs a Cart Mandate with the merchant private key (ES256K JWT)
+2. HSP proxy POSTs to HSP gateway (`/api/v1/merchant/orders`)
 3. Employer is redirected to HSP checkout URL
 4. Employer completes HSP checkout and payment is settled into the escrow contract
 5. HSP broadcasts the on chain transaction
-6. App confirms funding on chain through `JobEscrow.confirmHSPFunding()`
+6. App confirms funding on chain through `JobEscrow.confirmHSPFunding(jobId, cartMandateId, paymentRef)`
 7. If HSP later delivers a duplicate `payment-successful` webhook after finality, the webhook route is idempotent and acknowledges the already-funded job safely
 
 `MockHSP` remains deployed on testnet as an earlier simulation harness and fallback reference, but the primary payment path used by the app is now the live HSP API flow.
@@ -102,10 +103,10 @@ Live HSP testnet flow:
 
 | Contract           | Address                                    | Purpose                        |
 |--------------------|--------------------------------------------|--------------------------------|
-| AgentRegistry      | 0x30a1E5d11EB7bED3a54Ae19a5C9D7EB8370b7948 | ERC-721 agent identity NFTs    |
-| ReputationRegistry | 0x1DbBa2cC54194Ca359Efe4eEDabe0722b966867F | On chain reputation scores     |
-| JobEscrow          | 0x3770bC9D78DefBdc8b8fB691ad99073Fe82aFc51 | USDC escrow for job payments   |
-| MockHSP            | 0x5A9BeC5eA455028eCf958693a2d661B95e779c1A | Legacy simulation harness      |
+| AgentRegistry      | 0xce2897C3b1e8374D2C024188EB32b9CfE2799550 | Soulbound ERC-721 agent identity NFTs |
+| ReputationRegistry | 0x9A64e6695Acaf0fb4c7489aead2d635d20A6B1b0 | O(1) on chain reputation scores |
+| JobEscrow          | 0x50F0f34B26936B81AAc9EE8458c71A32CA90CFD3 | Per-job accounted USDC escrow for job payments |
+| MockHSP            | 0xB9C26C9cf9aC20C1AEe11D44785019534a8dB33C | Legacy simulation harness      |
 | USDC (testnet)     | 0x8FE3cB719Ee4410E236Cd6b72ab1fCDC06eF53c6 | Payment token                  |
 
 ## Tech Stack
@@ -128,8 +129,8 @@ Live HSP testnet flow:
 
 ## API Routes
 
-- `POST /api/hsp/create-order` creates a signed HSP Cart Mandate order and returns the checkout URL
-- `POST /api/hsp/webhook` verifies the HSP signature, handles duplicate notifications safely, and confirms funding on chain when required
+- `POST /api/hsp/create-order` proxies to the configured `HSP_PROXY_URL` to create a signed HSP Cart Mandate order and return the checkout URL
+- `POST /api/hsp/webhook` verifies the HSP signature, validates amount/token/status/payment reference, handles duplicate notifications safely, and confirms funding on chain when required
 
 ## Quick Start
 

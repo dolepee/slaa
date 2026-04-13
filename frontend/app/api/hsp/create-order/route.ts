@@ -1,9 +1,18 @@
 import { NextResponse } from 'next/server'
 
-const HSP_PROXY_URL = process.env.HSP_PROXY_URL || 'http://38.49.210.117:3001'
-
 export async function POST(req: Request) {
   try {
+    const HSP_PROXY_URL = process.env.HSP_PROXY_URL
+    if (!HSP_PROXY_URL) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'HSP proxy is not configured. Set HSP_PROXY_URL for live Cart Mandate order creation.',
+        },
+        { status: 503 }
+      )
+    }
+
     const body = await req.json()
 
     const proxyRes = await fetch(`${HSP_PROXY_URL}/api/hsp/create-order`, {
