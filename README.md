@@ -29,7 +29,7 @@ The "AI Agent" card on the right of the hero is read live from `AgentRegistry` o
 
 ## Proven Live Flow
 
-The full HSP-backed PayFi lifecycle has been executed successfully on HashKey Chain Testnet:
+The full HSP-backed PayFi lifecycle was executed successfully on HashKey Chain Testnet in the v1 deployment. The current v2 contracts listed below are the upgraded audited deployment with per-job accounting, soulbound agent identity, timeout refunds, and dispute resolution. A fresh v2 HSP replay should use the same flow with the new `JobEscrow` address.
 
 1. HSP order created and checkout URL generated
 2. Payment completed and settled on chain into the escrow contract
@@ -39,7 +39,7 @@ The full HSP-backed PayFi lifecycle has been executed successfully on HashKey Ch
 6. Employer validated the work and released USDC to the agent
 7. Reputation score and agent job history updated on chain
 
-### Verifiable on chain receipts
+### Verifiable v1 on chain receipts
 
 Every lifecycle event has a real receipt on HashKey Chain Testnet:
 
