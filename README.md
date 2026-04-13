@@ -29,27 +29,38 @@ The "AI Agent" card on the right of the hero is read live from `AgentRegistry` o
 
 ## Proven Live Flow
 
-The full HSP-backed PayFi lifecycle was executed successfully on HashKey Chain Testnet in the v1 deployment. The current v2 contracts listed below are the upgraded audited deployment with per-job accounting, soulbound agent identity, timeout refunds, and dispute resolution. A fresh v2 HSP replay should use the same flow with the new `JobEscrow` address.
+The full PayFi lifecycle has been executed on the v2 audited contracts on HashKey Chain Testnet. The v2 contracts include per-job escrow accounting, soulbound agent identity, timeout refunds, and dispute resolution.
 
-1. HSP order created and checkout URL generated
-2. Payment completed and settled on chain into the escrow contract
-3. `JobEscrow.confirmHSPFunding()` executed successfully with a job-bound payment reference
+1. Agent registered with soulbound ERC-721 identity NFT
+2. Employer created a job with 15 USDC reward and 7 day deadline
+3. USDC approved and deposited into per-job accounted escrow
 4. Agent accepted the funded job
-5. Agent submitted the deliverable CID
-6. Employer validated the work and released USDC to the agent
-7. Reputation score and agent job history updated on chain
+5. Agent submitted deliverable CID on chain
+6. Employer validated the work, released USDC to the agent, and posted reputation score (92/100)
+7. Reputation recorded on chain, job marked as Released
 
-### Verifiable v1 on chain receipts
+### Verifiable v2 on chain receipts
 
-Every lifecycle event has a real receipt on HashKey Chain Testnet:
+Every lifecycle event has a real receipt on HashKey Chain Testnet (v2 contracts):
+
+- AgentRegistered [`0x0fe5e259…06e43a`](https://testnet-explorer.hsk.xyz/tx/0x0fe5e2597ee71a540bfaf164898dcd7eea74b755c2ea223fac3e3be97306e43a)
+- JobCreated [`0xdf262fd7…28798`](https://testnet-explorer.hsk.xyz/tx/0xdf262fd71cddd7c92a0bc2f7f538a7a3242bb92085126182970d933196428798)
+- JobFunded [`0x63204cf9…67834`](https://testnet-explorer.hsk.xyz/tx/0x63204cf99fcad6387616c4415d65c2ff66375f0935e3417bc62ee53df3a67834)
+- JobAccepted [`0x71c47b50…2c204`](https://testnet-explorer.hsk.xyz/tx/0x71c47b5023ac7653792a96c5ffa76f9aac0cdea4e6ff0edfdd8d1f19f932c204)
+- WorkSubmitted [`0x7aaa58f8…6bc71`](https://testnet-explorer.hsk.xyz/tx/0x7aaa58f842e4143895fc5d8513ee4e50401825fb7e7fbae78eae36745896bc71)
+- PaymentReleased [`0x3a95c7cc…33514`](https://testnet-explorer.hsk.xyz/tx/0x3a95c7ccea12abff02022e38a724aea21f8c937005cc954ab186a22b25933514) (emits `ReputationPosted` in the same tx)
+
+The seven step hero demo on the landing page links each animated step to one of these v2 receipts so anyone can verify the proven flow in one click.
+
+### Prior v1 receipts (historical reference)
+
+The v1 contracts demonstrated the HSP-backed funding path before the audit upgrade:
 
 - JobCreated [`0x41e00d39…f06a34`](https://testnet-explorer.hsk.xyz/tx/0x41e00d39b9c8db34591574f3a76ff77c656c6cd0bf909e440702d4e142f06a34)
-- JobFunded [`0xff0698f1…069e64f`](https://testnet-explorer.hsk.xyz/tx/0xff0698f1a4f9cc0ac642f2d96984dd3d5bf38b9b750df1abebb378e8e069e64f)
+- JobFunded (via HSP) [`0xff0698f1…069e64f`](https://testnet-explorer.hsk.xyz/tx/0xff0698f1a4f9cc0ac642f2d96984dd3d5bf38b9b750df1abebb378e8e069e64f)
 - JobAccepted [`0xe57bf376…a93873`](https://testnet-explorer.hsk.xyz/tx/0xe57bf3768d55fff6ea1e8aef83195b6b84f2df45f825511777f3e51793a93873)
 - WorkSubmitted [`0x02e88939…6e6e8ee`](https://testnet-explorer.hsk.xyz/tx/0x02e88939b454327a069b003f7d904cf7b4c431474f1097342f465a62c6e6e8ee)
-- PaymentReleased [`0x1ab768fb…a002fd`](https://testnet-explorer.hsk.xyz/tx/0x1ab768fb7f3faf03f6c5d9e974f2039c5045b48134cdaaee40f1e0fb50a002fd) (emits `ReputationPosted` in the same tx)
-
-The seven step hero demo on the landing page links each animated step to one of these receipts so anyone can verify the proven flow in one click.
+- PaymentReleased [`0x1ab768fb…a002fd`](https://testnet-explorer.hsk.xyz/tx/0x1ab768fb7f3faf03f6c5d9e974f2039c5045b48134cdaaee40f1e0fb50a002fd)
 
 ## How It Works
 

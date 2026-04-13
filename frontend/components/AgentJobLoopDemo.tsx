@@ -18,21 +18,22 @@ interface Step {
 }
 
 const PROVEN_TX = {
-  jobCreated: '0x41e00d39b9c8db34591574f3a76ff77c656c6cd0bf909e440702d4e142f06a34',
-  jobFunded: '0xff0698f1a4f9cc0ac642f2d96984dd3d5bf38b9b750df1abebb378e8e069e64f',
-  jobAccepted: '0xe57bf3768d55fff6ea1e8aef83195b6b84f2df45f825511777f3e51793a93873',
-  workSubmitted: '0x02e88939b454327a069b003f7d904cf7b4c431474f1097342f465a62c6e6e8ee',
-  paymentReleased: '0x1ab768fb7f3faf03f6c5d9e974f2039c5045b48134cdaaee40f1e0fb50a002fd',
+  agentRegistered: '0x0fe5e2597ee71a540bfaf164898dcd7eea74b755c2ea223fac3e3be97306e43a',
+  jobCreated: '0xdf262fd71cddd7c92a0bc2f7f538a7a3242bb92085126182970d933196428798',
+  jobFunded: '0x63204cf99fcad6387616c4415d65c2ff66375f0935e3417bc62ee53df3a67834',
+  jobAccepted: '0x71c47b5023ac7653792a96c5ffa76f9aac0cdea4e6ff0edfdd8d1f19f932c204',
+  workSubmitted: '0x7aaa58f842e4143895fc5d8513ee4e50401825fb7e7fbae78eae36745896bc71',
+  paymentReleased: '0x3a95c7ccea12abff02022e38a724aea21f8c937005cc954ab186a22b25933514',
 } as const
 
 const STEPS: Step[] = [
   { id: 1, title: 'Someone posts a paid task', detail: 'Employer creates a job in JobEscrow with a USDC reward and a deadline.', txLink: `${EXPLORER_URL}/tx/${PROVEN_TX.jobCreated}`, txLabel: 'JobCreated' },
-  { id: 2, title: 'The payment is locked in escrow', detail: 'Funded via HSP checkout, or a direct USDC transfer into the escrow contract.', txLink: `${EXPLORER_URL}/tx/${PROVEN_TX.jobFunded}`, txLabel: 'JobFunded' },
-  { id: 3, title: 'An AI agent claims the work', detail: 'The agent NFT is attached to the job via acceptJob().', txLink: `${EXPLORER_URL}/tx/${PROVEN_TX.jobAccepted}`, txLabel: 'JobAccepted' },
+  { id: 2, title: 'The payment is locked in escrow', detail: 'USDC deposited into per-job accounted escrow via direct transfer or HSP checkout.', txLink: `${EXPLORER_URL}/tx/${PROVEN_TX.jobFunded}`, txLabel: 'JobFunded' },
+  { id: 3, title: 'An AI agent claims the work', detail: 'The soulbound agent NFT is attached to the job via acceptJob().', txLink: `${EXPLORER_URL}/tx/${PROVEN_TX.jobAccepted}`, txLabel: 'JobAccepted' },
   { id: 4, title: 'The agent finishes and submits the work', detail: 'Deliverable uploaded to decentralized storage. The CID is recorded onchain.', txLink: `${EXPLORER_URL}/tx/${PROVEN_TX.workSubmitted}`, txLabel: 'WorkSubmitted' },
   { id: 5, title: 'The person reviews the result', detail: 'Employer fetches the deliverable and decides whether to approve. This step happens off chain.', offchain: true },
-  { id: 6, title: 'The agent gets paid automatically', detail: 'validateAndRelease() sends USDC from escrow to the agent wallet.', txLink: `${EXPLORER_URL}/tx/${PROVEN_TX.paymentReleased}`, txLabel: 'PaymentReleased' },
-  { id: 7, title: 'The agent earns reputation onchain', detail: 'ReputationRegistry stores the new score. The reputation counter ticks up.', txLink: `${EXPLORER_URL}/address/${CONTRACTS.reputationRegistry}`, txLabel: 'ReputationRegistry' },
+  { id: 6, title: 'The agent gets paid automatically', detail: 'validateAndRelease() sends USDC from the job escrow balance to the agent wallet.', txLink: `${EXPLORER_URL}/tx/${PROVEN_TX.paymentReleased}`, txLabel: 'PaymentReleased' },
+  { id: 7, title: 'The agent earns reputation onchain', detail: 'ReputationRegistry stores the 92/100 score. O(1) average updated on chain.', txLink: `${EXPLORER_URL}/address/${CONTRACTS.reputationRegistry}`, txLabel: 'ReputationRegistry' },
 ]
 
 interface AgentInfo { tokenId: number; name: string; wallet: `0x${string}`; reputation: number }
@@ -240,16 +241,16 @@ export default function AgentJobLoopDemo() {
                   <span className="font-mono text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded text-xs">Released</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-400">fundedViaHSP</span>
-                  <span className="font-mono text-cyan-400 text-xs">true</span>
+                  <span className="text-gray-400">Escrow</span>
+                  <span className="font-mono text-cyan-400 text-xs">per-job accounted</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-400">Reward</span>
-                  <span className="font-mono text-white font-medium text-xs">10.0 USDC</span>
+                  <span className="font-mono text-white font-medium text-xs">15.0 USDC</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-400">Reputation</span>
-                  <span className="font-mono text-white font-medium text-xs">95/100</span>
+                  <span className="font-mono text-white font-medium text-xs">92/100</span>
                 </div>
               </div>
             </div>
