@@ -138,7 +138,7 @@ Live HSP testnet flow:
 # Contracts
 cd slaa
 npm install --legacy-peer-deps
-npx hardhat test          # 21 tests passing
+npx hardhat test          # 25 tests passing
 npx hardhat compile
 
 # Deploy to testnet
